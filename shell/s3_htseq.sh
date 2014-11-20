@@ -37,3 +37,5 @@ SAMTOOLS_EXEC=${ROOT_DIR}bin/samtools-0.1.19/samtools
 HTSEQ_EXEC=${ROOT_DIR}bin/HTSeq-0.6.1/build/scripts-2.7/htseq-count
 
 $SAMTOOLS_EXEC view -h $INPUT_FILE | $HTSEQ_EXEC $GTF_FILE > $OUTPUT_FILE
+# can just input BAM with -f bam option?
+$HTSEQ_EXEC -f bam $INPUT_FILE $GTF_FILE > $OUTPUT_FILE

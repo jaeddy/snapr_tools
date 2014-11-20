@@ -5,18 +5,18 @@
 SNAPR_VOL=/mnt/
 
 ROOT_DIR=/$1/ # input should be name of mounted EBS volume
-ASSEMBLY_DIR=${ROOT_DIR}assemblies/human/
-ASSEMBLY_NAME=Homo_sapiens.GRCh38
-ASSEMBLY_VER=.77
+ASSEMBLY_DIR=${ROOT_DIR}assemblies/mouse/
+ASSEMBLY_NAME=Mus_musculus.GRCm38
+ASSEMBLY_VER=.75
 
 # This should copy at least two files: the fasta and gtf file to the /mnt drive
 cp ${ASSEMBLY_DIR}${ASSEMBLY_NAME}* $SNAPR_VOL
 
 # Define SNAPR reference files
 SNAPR_EXEC=${ROOT_DIR}bin/snapr/snapr
-FASTA_FILE=${SNAPR_VOL}${ASSEMBLY_NAME}.dna.SORTED.fa
-GENOME_DIR=${SNAPR_VOL}genome20
-TRANSCRIPTOME_DIR=${SNAPR_VOL}transcriptome20
+FASTA_FILE=${SNAPR_VOL}${ASSEMBLY_NAME}${ASSEMBLY_VER}.dna.SORTED.fa
+GENOME_DIR=${SNAPR_VOL}genome20_mouse
+TRANSCRIPTOME_DIR=${SNAPR_VOL}transcriptome20_mouse
 GTF_FILE=${SNAPR_VOL}${ASSEMBLY_NAME}${ASSEMBLY_VER}.gtf
 
 # If these aren't already made on the /mnt drive, make them
@@ -29,6 +29,7 @@ if [ ! -e "$TRANSCRIPTOME_DIR" ]; then
 fi
 
 ls $SNAPR_VOL
+$SNAPR_EXEC index
 
 $SNAPR_EXEC index \
     $FASTA_FILE \

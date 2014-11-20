@@ -1,3 +1,4 @@
+#!/bin/sh
 
 # mounts the ss hard drive (do this first) 
 

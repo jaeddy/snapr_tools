@@ -8,8 +8,9 @@ FILE_NAME=$(basename $S3_PATH)
 echo $FILE_NAME
 
 # Specify directories
-ROOT_DIR=./
-TMP_DIR=${ROOT_DIR}tmp/
+ROOT_DIR=/$2/
+TMP_DIR=./tmp/
+SNAPR_VOL=/mnt/
 
 # Create temporary directory for input files
 if [ ! -e "$TMP_DIR" ]; then
@@ -27,17 +28,18 @@ PREFIX=${$FILE_NAME%.bam}
 OUTPUT_FILE=${TMP_DIR}${PREFIX}.snap.bam
 
 # Define SNAPR reference files
-SNAPR_EXEC=/bin/snap/snapr
-GENOME_FILE=/mnt/genome20
-TRANSCRIPTOME_FILE=/mnt/transcriptome20
-GTF_FILE=/mnt/Homo_sapiens.GRCh37.68.gtf
-CONTAM_FILE=/mnt/contamination20
+ASSEMBLY_NAME=Homo_sapiens.GRCh38
+ASSEMBLY_VER=.77
 
+SNAPR_EXEC=${ROOT_DIR}bin/snap/snapr
+GENOME_DIR=${SNAPR_VOL}genome20
+TRANSCRIPTOME_DIR=${SNAPR_VOL}transcriptome20
+GTF_FILE=${SNAPR_VOL}${ASSEMBLY_NAME}${ASSEMBLY_VER}.gtf
 
 # Run SNAPR
-# time $SNAPR_EXEC paired \
-#     $GENOME_FILE \
-#     $TRANSCRIPTOME_FILE \
+# $SNAPR_EXEC paired \
+#     $GENOME_DIR \
+#     $TRANSCRIPTOME_DIR \
 #     $GTF_FILE \
 #     $INPUT_FILE \
 #     -o $OUTPUT_FILE \

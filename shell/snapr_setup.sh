@@ -8,6 +8,7 @@ head qhost.txt | awk '{print $1}' | grep $CLUSTER_NAME > hostnames.txt
 while read line; do
     
     echo $line
+    # qsub -l h=${line} ./mount_ssd.sh
     # qsub -l h=${line} ./prep_node.sh 
 
 done < hostnames.txt

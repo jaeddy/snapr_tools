@@ -19,30 +19,31 @@ fi
 
 # Download S3 file
 INPUT_FILE=${TMP_DIR}${FILE_NAME}
-aws s3 cp \
-    $S3_PATH \
-    $INPUT_FILE ;
+echo "Copying $S3_PATH to $INPUT_FILE"
+#aws s3 cp \
+#    $S3_PATH \
+#    $INPUT_FILE ;
 
 # Define SNAPR output file
-PREFIX=${$FILE_NAME%.bam}
+PREFIX=${FILE_NAME%.bam}
 OUTPUT_FILE=${TMP_DIR}${PREFIX}.snap.bam
 
 # Define SNAPR reference files
 ASSEMBLY_NAME=Homo_sapiens.GRCh38
 ASSEMBLY_VER=.77
 
-SNAPR_EXEC=${ROOT_DIR}bin/snap/snapr
+SNAPR_EXEC=${ROOT_DIR}bin/snapr/snapr
 GENOME_DIR=${SNAPR_VOL}genome20
 TRANSCRIPTOME_DIR=${SNAPR_VOL}transcriptome20
 GTF_FILE=${SNAPR_VOL}${ASSEMBLY_NAME}${ASSEMBLY_VER}.gtf
 
 # Run SNAPR
-# $SNAPR_EXEC paired \
-#     $GENOME_DIR \
-#     $TRANSCRIPTOME_DIR \
-#     $GTF_FILE \
-#     $INPUT_FILE \
-#     -o $OUTPUT_FILE \
-#     -M \
-#     -rg $PREFIX \
-#     -so ;
+$SNAPR_EXEC paired \
+    $GENOME_DIR \
+    $TRANSCRIPTOME_DIR \
+    $GTF_FILE \
+    $INPUT_FILE \
+    -o $OUTPUT_FILE \
+    -M \
+    -rg $PREFIX \
+    -so ;

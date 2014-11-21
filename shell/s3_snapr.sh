@@ -20,9 +20,9 @@ fi
 # Download S3 file
 INPUT_FILE=${TMP_DIR}${FILE_NAME}
 echo "Copying $S3_PATH to $INPUT_FILE"
-#aws s3 cp \
-#    $S3_PATH \
-#    $INPUT_FILE ;
+aws s3 cp \
+    $S3_PATH \
+    $INPUT_FILE ;
 
 # Define SNAPR output file
 PREFIX=${FILE_NAME%.bam}

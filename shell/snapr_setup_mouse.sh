@@ -7,10 +7,10 @@ qhost | awk '{print $1}' | grep $CLUSTER_NAME > hostnames.txt
 
 # Build indices on each node
 while read line; do
-    
+
     echo "Building indices on $line"
-    #./shell/build_indices_mouse.sh $EBS_NAME
-    qsub -l h=${line} ./shell/build_indices_mouse.sh $EBS_NAME
+    #./shell/build_indices.sh $EBS_NAME
+    qsub -V -l h=${line} ./shell/build_indices_mouse.sh $EBS_NAME
 
 done < hostnames.txt
 

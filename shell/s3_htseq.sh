@@ -19,12 +19,12 @@ fi
 
 # Download S3 file
 INPUT_FILE=${TMP_DIR}${FILE_NAME}
-aws s3 cp \
-    $S3_PATH \
-    $INPUT_FILE ;
+#aws s3 cp \
+#    $S3_PATH \
+#    $INPUT_FILE ;
 
 # Define HTSeq output file
-PREFIX=${$FILE_NAME%.bam}
+PREFIX=${FILE_NAME%.bam}
 OUTPUT_FILE=${TMP_DIR}${PREFIX}.counts.txt
 
 # Define reference files
@@ -36,6 +36,8 @@ GTF_FILE=${SNAPR_VOL}${ASSEMBLY_NAME}${ASSEMBLY_VER}.gtf
 SAMTOOLS_EXEC=${ROOT_DIR}bin/samtools-0.1.19/samtools
 HTSEQ_EXEC=${ROOT_DIR}bin/HTSeq-0.6.1/build/scripts-2.7/htseq-count
 
-$SAMTOOLS_EXEC view -h $INPUT_FILE | $HTSEQ_EXEC $GTF_FILE > $OUTPUT_FILE
+#$HTSEQ_EXEC
+
+#$SAMTOOLS_EXEC view -h $INPUT_FILE | $HTSEQ_EXEC $GTF_FILE > $OUTPUT_FILE
 # can just input BAM with -f bam option?
 $HTSEQ_EXEC -f bam $INPUT_FILE $GTF_FILE > $OUTPUT_FILE

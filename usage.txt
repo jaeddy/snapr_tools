@@ -1,0 +1,11 @@
+
+# EBS volume = /snapr/
+
+cd /EBSNAME/
+git clone https://github.com/jaeddy/snapr_tools
+
+cd snapr_tools
+
+./shell/ssd_setup.sh CLUSTERNAME
+./shell/snapr_setup.sh CLUSTERNAME EBSNAME
+./shell/submit_s3_snapr.sh S3BUCKET GROUPNAME EBSNAME

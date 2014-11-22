@@ -10,8 +10,8 @@ echo $PREFIX
 
 # Specify directories
 ROOT_DIR=/$2/
-TMP_DIR=./${PREFIX}_tmp/
 SNAPR_VOL=/mnt/
+TMP_DIR=${SNAPR_VOL}${PREFIX}_tmp/
 
 # Create temporary directory for input files
 if [ ! -e "$TMP_DIR" ]; then

@@ -38,7 +38,7 @@ TRANSCRIPTOME_DIR=${SNAPR_VOL}transcriptome20
 GTF_FILE=${SNAPR_VOL}${ASSEMBLY_NAME}${ASSEMBLY_VER}.gtf
 
 # Run SNAPR
-$SNAPR_EXEC paired \
+time $SNAPR_EXEC paired \
     $GENOME_DIR \
     $TRANSCRIPTOME_DIR \
     $GTF_FILE \
@@ -52,13 +52,11 @@ $SNAPR_EXEC paired \
 # Remove original file
 rm $INPUT_FILE
 
-touch $TMP_DIR/test
-
 # Copy files to S3
-#aws s3 cp \
-#    $TMP_DIR \
-#    $S3_DIR/snapr/ \
-#    --recursive ;
+aws s3 cp \
+    $TMP_DIR \
+    $S3_DIR/snapr/ \
+    --recursive ;
 
 # Remove temporary directory
 #rm -rf $TMP_DIR

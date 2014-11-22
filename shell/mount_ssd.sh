@@ -6,3 +6,6 @@ sudo mkfs.ext4 /dev/xvdaa
 sudo mkdir -m 000 /mnt # isnt required if /mnt exists.
 echo "/dev/xvdaa /mnt auto noatime 0 0" | sudo tee -a /etc/fstab
 sudo mount /mnt
+
+# install AWS CLI (this shouldn't be necessary once added to AMI)
+pip install awscli

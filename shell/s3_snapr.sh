@@ -46,12 +46,13 @@ GTF_FILE=${SNAPR_VOL}${ASSEMBLY_NAME}${ASSEMBLY_VER}.gtf
 #    -o $OUTPUT_FILE \
 #    -M \
 #    -rg $PREFIX \
-#    -so ;
+#    -so \
+#    -ku ;
 
 # Remove original file
 rm $INPUT_FILE
 
-touch $TMP_DIR/test3
+touch $TMP_DIR/test
 
 # Copy files to S3
 aws s3 cp \
@@ -60,4 +61,4 @@ aws s3 cp \
     --recursive ;
 
 # Remove temporary directory
-rm -rf $TMP_DIR
+#rm -rf $TMP_DIR

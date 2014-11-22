@@ -5,11 +5,12 @@ S3_PATH=$1
 # Parse S3 file path
 S3_DIR=$(dirname $S3_PATH)
 FILE_NAME=$(basename $S3_PATH)
-echo $FILE_NAME
+PREFIX=${FILE_NAME%.bam}
+echo $PREFIX
 
 # Specify directories
 ROOT_DIR=/$2/
-TMP_DIR=./tmp/
+TMP_DIR=./${PREFIX}_tmp/
 SNAPR_VOL=/mnt/
 
 # Create temporary directory for input files
@@ -25,7 +26,6 @@ aws s3 cp \
     $INPUT_FILE ;
 
 # Define SNAPR output file
-PREFIX=${FILE_NAME%.bam}
 OUTPUT_FILE=${TMP_DIR}${PREFIX}.snap.bam
 
 # Define SNAPR reference files
@@ -38,12 +38,26 @@ TRANSCRIPTOME_DIR=${SNAPR_VOL}transcriptome20
 GTF_FILE=${SNAPR_VOL}${ASSEMBLY_NAME}${ASSEMBLY_VER}.gtf
 
 # Run SNAPR
-$SNAPR_EXEC paired \
-    $GENOME_DIR \
-    $TRANSCRIPTOME_DIR \
-    $GTF_FILE \
-    $INPUT_FILE \
-    -o $OUTPUT_FILE \
-    -M \
-    -rg $PREFIX \
-    -so ;
+#$SNAPR_EXEC paired \
+#    $GENOME_DIR \
+#    $TRANSCRIPTOME_DIR \
+#    $GTF_FILE \
+#    $INPUT_FILE \
+#    -o $OUTPUT_FILE \
+#    -M \
+#    -rg $PREFIX \
+#    -so ;
+
+# Remove original file
+rm $INPUT_FILE
+
+touch $TMP_DIR/test3
+
+# Copy files to S3
+aws s3 cp \
+    $TMP_DIR \
+    $S3_DIR/snapr/ \
+    --recursive ;
+
+# Remove temporary directory
+rm -rf $TMP_DIR

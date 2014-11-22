@@ -27,7 +27,7 @@ for FILE_NUM in $(seq 1 $NUM_FILES); do
 #    echo $FILE_NUM
     FILE=$(awk -v r=$FILE_NUM 'NR==r{print;exit}' ${GROUP}_bam_files.txt)
     S3_PATH=$BUCKET/$FILE
-    JOBNAME=$(basename $S3_PATH)
+    JOB_NAME=$(basename $S3_PATH)
 
     qsub -V -pe orte 16 \
         -o ${LOG_DIR}${JOB_NAME}${TAG}.o \

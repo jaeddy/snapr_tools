@@ -59,4 +59,4 @@ aws s3 cp \
     --recursive ;
 
 # Remove temporary directory
-#rm -rf $TMP_DIR
+rm -rf $TMP_DIR

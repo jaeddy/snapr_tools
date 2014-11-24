@@ -19,8 +19,6 @@ GENOME_DIR=${SNAPR_VOL}genome20_mouse
 TRANSCRIPTOME_DIR=${SNAPR_VOL}transcriptome20_mouse
 GTF_FILE=${SNAPR_VOL}${ASSEMBLY_NAME}${ASSEMBLY_VER}.gtf
 
-echo $GTF_FILE
-
 # If these aren't already made on the /mnt drive, make them
 if [ ! -e "$GENOME_DIR" ]; then
     mkdir "$GENOME_DIR"
@@ -30,8 +28,7 @@ if [ ! -e "$TRANSCRIPTOME_DIR" ]; then
     mkdir "$TRANSCRIPTOME_DIR"
 fi
 
-#ls $SNAPR_VOL
-#$SNAPR_EXEC index
+ls $SNAPR_VOL
 
 $SNAPR_EXEC index \
     $FASTA_FILE \

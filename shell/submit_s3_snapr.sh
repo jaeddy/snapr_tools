@@ -8,7 +8,7 @@ EBS_NAME=$3
 aws s3 ls ${BUCKET}/${GROUP} --recursive | grep .bam$ | awk '{print $4}' > ${GROUP}_bam_files.txt
 
 #NUM_FILES=2
-NUM_FILES=$(wc -l bam_files.txt | awk '{print $1}')
+NUM_FILES=$(wc -l ${GROUP}_bam_files.txt | awk '{print $1}')
 echo "$NUM_FILES files detected..."
 
 # Specify path to job script

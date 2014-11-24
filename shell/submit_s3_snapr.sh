@@ -5,7 +5,10 @@ GROUP=$2
 EBS_NAME=$3
 
 # Get full list of all BAM files from S3 bucket for the specified group
-aws s3 ls ${BUCKET}/${GROUP} --recursive | grep .bam$ | awk '{print $4}' > ${GROUP}_bam_files.txt
+aws s3 ls ${BUCKET}/${GROUP} --recursive \
+    | grep .bam$ \
+    | awk '{print $4}' \
+    > ${GROUP}_bam_files.txt ;
 
 #NUM_FILES=2
 NUM_FILES=$(wc -l ${GROUP}_bam_files.txt | awk '{print $1}')
@@ -16,7 +19,6 @@ SCRIPT_PATH=/${EBS_NAME}/snapr_tools/shell/s3_snapr.sh
 
 for FILE_NUM in $(seq 1 $NUM_FILES); do
     
-#    echo $FILE_NUM
     FILE=$(awk -v r=$FILE_NUM 'NR==r{print;exit}' ${GROUP}_bam_files.txt)
     S3_PATH=$(dirname $BUCKET)/$FILE
     JOB_NAME=$(basename $S3_PATH)

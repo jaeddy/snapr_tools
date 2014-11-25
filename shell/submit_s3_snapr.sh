@@ -12,7 +12,7 @@ aws s3 ls ${BUCKET}/${GROUP} --recursive \
 
 NUM_FILES=$(wc -l ${GROUP}_bam_files.txt | awk '{print $1}')
 echo "$NUM_FILES files detected..."
-NUM_FILES=1
+#NUM_FILES=1
 
 # Specify path to job script
 SCRIPT_PATH=/${EBS_NAME}/snapr_tools/shell/s3_snapr.sh

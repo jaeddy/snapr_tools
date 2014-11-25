@@ -15,7 +15,7 @@ echo "$NUM_FILES files detected..."
 NUM_FILES=1
 
 # Specify path to job script
-SCRIPT_PATH=/${EBS_NAME}/snapr_tools/shell/s3_snapr_mouse.sh
+SCRIPT_PATH=/${EBS_NAME}/snapr_tools/shell/s3_snapr_mouse_sort.sh
 
 for FILE_NUM in $(seq 1 $NUM_FILES); do
     

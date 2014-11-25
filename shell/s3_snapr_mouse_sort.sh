@@ -19,7 +19,7 @@ if [ ! -e "$TMP_DIR" ]; then
 fi
 
 # Download S3 file
-INPUT_FILE=${TMP_DIR}${FILE_NAME}
+INPUT_FILE=${TMP_DIR}${FILE_NAME}_sorted
 echo "Copying $S3_PATH to $INPUT_FILE"
 aws s3 cp \
     $S3_PATH \
@@ -27,6 +27,10 @@ aws s3 cp \
 
 # Define SNAPR output file
 OUTPUT_FILE=${TMP_DIR}${PREFIX}.snap.bam
+
+# Define samtools executable
+SAMTOOLS_EXEC=${ROOT_DIR}bin/samtools-0.1.19/samtools
+SORTED_FILE=${TMP_DIR}${PREFIX}.sorted
 
 # Define SNAPR reference files
 ASSEMBLY_NAME=Mus_musculus.GRCm38
@@ -37,12 +41,15 @@ GENOME_DIR=${SNAPR_VOL}genome20_mouse
 TRANSCRIPTOME_DIR=${SNAPR_VOL}transcriptome20_mouse
 GTF_FILE=${SNAPR_VOL}${ASSEMBLY_NAME}${ASSEMBLY_VER}.gtf
 
+# Run samtools
+$SAMTOOLS_EXEC sort $INPUT_FILE $SORTED_FILE
+
 # Run SNAPR
 time $SNAPR_EXEC paired \
     $GENOME_DIR \
     $TRANSCRIPTOME_DIR \
     $GTF_FILE \
-    $INPUT_FILE \
+    $SORTED_FILE \
     -o $OUTPUT_FILE \
     -M \
     -rg $PREFIX \

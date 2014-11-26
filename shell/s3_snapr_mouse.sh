@@ -49,13 +49,13 @@ time $SNAPR_EXEC paired \
     -so  ;
 
 # Remove original file
-#rm $INPUT_FILE
+rm $INPUT_FILE
 
 # Copy files to S3
-#aws s3 cp \
-#    $TMP_DIR \
-#    $S3_DIR/snapr/ \
-#    --recursive ;
+aws s3 cp \
+    $TMP_DIR \
+    $S3_DIR/snapr/ \
+    --recursive ;
 
 # Remove temporary directory
-#rm -rf $TMP_DIR
+rm -rf $TMP_DIR

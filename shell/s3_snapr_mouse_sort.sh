@@ -30,7 +30,7 @@ OUTPUT_FILE=${TMP_DIR}${PREFIX}.snap.bam
 
 # Define samtools executable
 SAMTOOLS_EXEC=${ROOT_DIR}bin/samtools-0.1.19/samtools
-SORTED_FILE=${TMP_DIR}${PREFIX}.sorted
+SORTED_FILE=${TMP_DIR}${PREFIX}.sorted.bam
 
 # Define SNAPR reference files
 ASSEMBLY_NAME=Mus_musculus.GRCm38
@@ -42,7 +42,7 @@ TRANSCRIPTOME_DIR=${SNAPR_VOL}transcriptome20_mouse
 GTF_FILE=${SNAPR_VOL}${ASSEMBLY_NAME}${ASSEMBLY_VER}.gtf
 
 # Run samtools
-$SAMTOOLS_EXEC sort $INPUT_FILE $SORTED_FILE
+#$SAMTOOLS_EXEC sort $INPUT_FILE $SORTED_FILE
 
 # Run SNAPR
 time $SNAPR_EXEC paired \

@@ -14,6 +14,10 @@ FILE1='file1.fastq'
 FILE2='file2.fastq'
 FORMAT=fastq
 
+GENOME="/snap/Genomes/GRCh37/snap/genome20/"
+TRANSCRIPTOME="/snap/Genomes/GRCh37/snap/transcriptome20/"
+ENSEMBL="/snap/Genomes/GRCh37/gtf/Homo_sapiens.GRCh37.68.gtf"
+
 function usage {
 	echo "$0: [-m mem(3.8G,15.8G) [-p num_slots] [-q queue] [-N jobname] [-e email_address] [-g] -p prefix -1 file1.fastq -2 file2.fastq -o output_dir -b"
 	echo
@@ -34,7 +38,6 @@ while getopts "b:n:s:N:1:2:f:h" ARG; do
 done
 shift $(($OPTIND - 1)) 
 
-
 # function submit_job {
 #     echo $("-S /bin/bash -V -cwd -j y" \ # basic options
 #         "-N job.${PREFIX}" \ # job name
@@ -46,9 +49,9 @@ shift $(($OPTIND - 1))
 # }
 # submit_job
 
-FILE=`mktemp snap-rna.XXXXXXXX`
+QSUB_BASE=`mktemp qsub-settings.XXXXXXXX`
 
-cat > $FILE <<EOF
+cat > $QSUB_BASE <<EOF
 #!/bin/bash
 
 ### SGE settings #################################################
@@ -85,7 +88,12 @@ cat > $FILE <<EOF
 EOF
 
 echo "#$ $QSUBOPTS"
-# cat $FILE
+# cat $QSUB_BASE
+
+# Specify path to job script
+JOB_SCRIPT=shell/s3_snapr.sh
+
+
 
 case "$FORMAT" in
     bam ) EXTENSION=.bam;;
@@ -116,13 +124,43 @@ function get_id {
 NUM_IDS=$(get_id $FILE_LIST | wc -l | awk '{print $1}')
 echo "$NUM_IDS ids..."
 
+count=0
 # Pull out all paired file paths
 get_id ${FILE_LIST} | uniq | head -n 4 | while read ID
 do
+    count=$(($count+1)) # counter for testing
+    if [ $count -gt 1 ]
+    then
+        break
+    fi
+    
     FILE_PAIR=$(grep $ID $FILE_LIST)
     
     FILE1=${BUCKET}/$(echo $FILE_PAIR | awk '{print $1}')
-    FILE2=${BUCKET}/$(echo $FILE_PAIR | awk '{print $2}')    
+    FILE2=${BUCKET}/$(echo $FILE_PAIR | awk '{print $2}')
+    
+    JOB_SETTINGS=`mktemp qsub-job.XXXXXXXX`
+    echo $JOB_SETTINGS
+    cat > $JOB_SETTINGS <<EOF
+
+### Job settings ###################################################
+
+$JOB_SCRIPT -p $FILE1 $FILE2 \
+    -g $GENOME \
+    -t $TRANSCRIPTOME \
+    -e $ENSEMBL
+    
+EOF
+    
+    SUBMIT_FILE=`mktemp qsub-submit.XXXXXXXX`
+    cat $QSUB_BASE $JOB_SETTINGS > $SUBMIT_FILE
+    
+    cat $SUBMIT_FILE
+    
+    rm $JOB_SETTINGS
+    rm $SUBMIT_FILE
 done
 
+rm $QSUB_BASE
 rm $FILE_LIST
+

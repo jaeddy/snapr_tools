@@ -4,9 +4,12 @@
 # SUBDIR="AD_Samples"
 BUCKET="s3://ufl-u01-rnaseq"
 
-NUM=16
-STR="230.0G"
+PROCS=16
+MEM="230.0G"
 NAME='default'
+QUEUE=all.q
+EMAIL="bob@bob.com"
+
 FILE1='file1.fastq'
 FILE2='file2.fastq'
 FORMAT=fastq
@@ -19,8 +22,8 @@ function usage {
 while getopts "b:n:s:N:1:2:f:h" ARG; do
 	case "$ARG" in
 	    b ) BUCKET=$OPTARG;;
-		n ) NUM=$OPTARG;;
-		s ) STR=$OPTARG;;
+		n ) PROCS=$OPTARG;;
+		s ) MEM=$OPTARG;;
 		N ) NAME=$OPTARG;;
         1 ) FILE1=$OPTARG;;
         2 ) FILE2=$OPTARG;;
@@ -31,13 +34,58 @@ while getopts "b:n:s:N:1:2:f:h" ARG; do
 done
 shift $(($OPTIND - 1)) 
 
-function submit_job {
-    qsub -V -pe orte 16 \
-        -o ${JOB_NAME}${TAG}.o \
-        -e ${JOB_NAME}${TAG}.e \
-        -b y $SCRIPT_PATH $S3_PATH $EBS_NAME ;
-}
 
+# function submit_job {
+#     echo $("-S /bin/bash -V -cwd -j y" \ # basic options
+#         "-N job.${PREFIX}" \ # job name
+#         "-pe orte $PROCS" \ # number of processors
+#         "-q $QUEUE" \ # submission queue
+#         "-M $EMAIL -m beas" \ # notification email
+#         "-l virtual_free=$MEM -l h_vmem=$MEM" \ # minimum memory
+#         "-b y $SCRIPT_PATH $S3_PATH $EBS_NAME") ;
+# }
+# submit_job
+
+FILE=`mktemp snap-rna.XXXXXXXX`
+
+cat > $FILE <<EOF
+#!/bin/bash
+
+### SGE settings #################################################
+
+#$ -S /bin/bash
+#$ -V
+
+# Change to current working directory (otherwise starts in $HOME)
+#$ -cwd
+
+# Set the name of the job
+#$ -N job.${NAME}
+
+# Combine output and error files into single output file (y=yes, n=no)
+#$ -j y
+
+# Serial is used to keep all processors together
+#$ -pe orte $PROCS
+
+# Specify the queue to submit the job to (only one at this time)
+#$ -q $QUEUE
+
+# Specify my email address for notification
+#$ -M $EMAIL
+
+# Specify what events to notify me for
+# 'b'=job begins, 'e'=job ends, 'a'=job aborts, 's'=job suspended, 'n'=no email
+#$ -m beas
+
+# Minimum amount free memory we want
+#$ -l virtual_free=$MEM
+#$ -l h_vmem=$MEM
+
+EOF
+
+echo "#$ $QSUBOPTS"
+# cat $FILE
 
 case "$FORMAT" in
     bam ) EXTENSION=.bam;;

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 S3_PATH=$1
 

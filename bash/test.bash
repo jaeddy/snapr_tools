@@ -35,14 +35,11 @@ done
 shift $(($OPTIND - 1)) 
 
 
-echo $FORMAT
-
 case "$FORMAT" in
     bam ) EXTENSION=.bam;;
     fastq ) EXTENSION=.fastq.gz;;
 esac
 
-echo $EXTENSION
 
 # Get full list of all BAM files from S3 bucket for the specified group
 FILE_LIST=`mktemp s3-seq-files.XXXXXXXX`
@@ -66,10 +63,32 @@ function get_id {
 
 # Get list of unique sample identifiers
 ID_LIST=`mktemp s3-seq-ids.XXXXXXXX`
-
 get_id ${FILE_LIST} | uniq > $ID_LIST
 
 NUM_IDS=$(wc -l ${ID_LIST} | awk '{print $1}')
 echo "$NUM_IDS ids..."
 
+for ID_NUM in 1; do
+
+    ID=$(awk -v r=$ID_NUM 'NR==r{print;exit}' $ID_LIST)
+    echo $ID
+    echo ""
+    
+    FILES=$(grep $ID $FILE_LIST)
+    echo $FILES
+    echo ""
+#     echo $FILES | awk '{print $1}'
+#     echo ""
+    
+    TEST=$(awk -v id="$ID" '$0 ~ id' $FILE_LIST)
+    echo $TEST
+    
+    # FILE1=$(grep $ID $FILE_LIST | awk '{print $1}')
+#     echo $FILE1
+#     echo ""
+    
+#     FILE2=$(grep ${ID} $FILE_LIST) | awk '{print $2}'
+#     echo $FILE2
+    
+done
 # rm $FILE_LIST

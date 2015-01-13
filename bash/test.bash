@@ -2,10 +2,7 @@
 
 # BUCKET="s3://mayo-prelim-rnaseq"
 # SUBDIR="AD_Samples"
-
-
 BUCKET="s3://ufl-u01-rnaseq"
-
 
 NUM=16
 STR="230.0G"
@@ -13,12 +10,12 @@ NAME='default'
 FILE1='file1.fastq'
 FILE2='file2.fastq'
 FORMAT=fastq
-# 
-# function usage {
-# 	echo "$0: [-m mem(3.8G,15.8G) [-p num_slots] [-q queue] [-N jobname] [-e email_address] [-g] -p prefix -1 file1.fastq -2 file2.fastq -o output_dir -b"
-# 	echo
-# }
-# 
+
+function usage {
+	echo "$0: [-m mem(3.8G,15.8G) [-p num_slots] [-q queue] [-N jobname] [-e email_address] [-g] -p prefix -1 file1.fastq -2 file2.fastq -o output_dir -b"
+	echo
+}
+
 while getopts "b:n:s:N:1:2:f:h" ARG; do
 	case "$ARG" in
 	    b ) BUCKET=$OPTARG;;
@@ -34,16 +31,21 @@ while getopts "b:n:s:N:1:2:f:h" ARG; do
 done
 shift $(($OPTIND - 1)) 
 
+function submit_job {
+    qsub -V -pe orte 16 \
+        -o ${JOB_NAME}${TAG}.o \
+        -e ${JOB_NAME}${TAG}.e \
+        -b y $SCRIPT_PATH $S3_PATH $EBS_NAME ;
+}
+
 
 case "$FORMAT" in
     bam ) EXTENSION=.bam;;
     fastq ) EXTENSION=.fastq.gz;;
 esac
 
-
-# Get full list of all BAM files from S3 bucket for the specified group
+# Get full list of all files from S3 bucket for the specified group
 FILE_LIST=`mktemp s3-seq-files.XXXXXXXX`
-
 aws s3 ls ${BUCKET}/${SUBDIR} --recursive \
     | grep ${EXTENSION}$ \
     | awk '{print $4}' \
@@ -52,6 +54,7 @@ aws s3 ls ${BUCKET}/${SUBDIR} --recursive \
 NUM_FILES=$(wc -l ${FILE_LIST} | awk '{print $1}')
 echo "$NUM_FILES files..."
 
+# Function to pull out sample IDs from file paths
 function get_id {
     while read line 
     do
@@ -62,33 +65,16 @@ function get_id {
 }
 
 # Get list of unique sample identifiers
-ID_LIST=`mktemp s3-seq-ids.XXXXXXXX`
-get_id ${FILE_LIST} | uniq > $ID_LIST
-
-NUM_IDS=$(wc -l ${ID_LIST} | awk '{print $1}')
+NUM_IDS=$(get_id $FILE_LIST | wc -l | awk '{print $1}')
 echo "$NUM_IDS ids..."
 
-for ID_NUM in 1; do
-
-    ID=$(awk -v r=$ID_NUM 'NR==r{print;exit}' $ID_LIST)
-    echo $ID
-    echo ""
+# Pull out all paired file paths
+get_id ${FILE_LIST} | uniq | head -n 4 | while read ID
+do
+    FILE_PAIR=$(grep $ID $FILE_LIST)
     
-    FILES=$(grep $ID $FILE_LIST)
-    echo $FILES
-    echo ""
-#     echo $FILES | awk '{print $1}'
-#     echo ""
-    
-    TEST=$(awk -v id="$ID" '$0 ~ id' $FILE_LIST)
-    echo $TEST
-    
-    # FILE1=$(grep $ID $FILE_LIST | awk '{print $1}')
-#     echo $FILE1
-#     echo ""
-    
-#     FILE2=$(grep ${ID} $FILE_LIST) | awk '{print $2}'
-#     echo $FILE2
-    
+    FILE1=${BUCKET}/$(echo $FILE_PAIR | awk '{print $1}')
+    FILE2=${BUCKET}/$(echo $FILE_PAIR | awk '{print $2}')    
 done
-# rm $FILE_LIST
+
+rm $FILE_LIST

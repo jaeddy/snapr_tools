@@ -22,6 +22,21 @@ ROOT_DIR=/$2/
 SNAPR_VOL=/mnt/
 TMP_DIR=${SNAPR_VOL}${PREFIX}_tmp/
 
+while getopts "b:n:s:N:1:2:f:h" ARG; do
+	case "$ARG" in
+	    b ) BUCKET=$OPTARG;;
+		n ) PROCS=$OPTARG;;
+		s ) MEM=$OPTARG;;
+		N ) NAME=$OPTARG;;
+        1 ) FILE1=$OPTARG;;
+        2 ) FILE2=$OPTARG;;
+        f ) FORMAT=$OPTARG;;
+		h ) usage; exit 0;;
+		* ) usage; exit 1;;
+	esac
+done
+shift $(($OPTIND - 1)) 
+
 # Create temporary directory for input files
 if [ ! -e "$TMP_DIR" ]; then
     mkdir "$TMP_DIR"

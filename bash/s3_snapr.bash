@@ -1,20 +1,26 @@
 #!/bin/bash
 
-S3_PATH=$1
-
 GENOME=/resources/genome20
 TRANSCRIPTOME_DIR=/resources/transcriptome20
 ENSEMBL=/resources/Homo_sapiens.GRCh38.77.gtf
 
-MODE=single
-PAIRTAG="_R[1-2]_"
+MODE=paired
+REPROCESS=0
+PATH2=""
+PAIR_LABEL="_R[1-2]_"
 
-while getopts "sp1:2:g:t:e:h" ARG; do
+function usage {
+	echo "$0: [-m mode (paired/single)] [-r] -1 s3://path_to_file [-2 s3://path_to_paired_file] [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-e ref_transcriptome]"
+	echo
+}
+
+while getopts "mr1:2:lg:t:e:h" ARG; do
 	case "$ARG" in
-	    s ) MODE=single;;
-	    p ) MODE=paired;;
+	    m ) MODE=$OPTARG;;
+	    r ) REPROCESS=1;;
 	    1 ) PATH1=$OPTARG;;
 	    2 ) PATH2=$OPTARG;;
+	    l ) PAIR_LABEL=$OPTARG;;
 		g ) GENOME=$OPTARG;;
 		t ) TRANSCRIPTOME=$OPTARG;;
 		e ) ENSEMBL=$OPTARG;;
@@ -23,8 +29,6 @@ while getopts "sp1:2:g:t:e:h" ARG; do
 	esac
 done
 shift $(($OPTIND - 1))
-
-echo "$MODE $PATH1"
 
 # Function to pull out sample IDs from file paths
 function get_id {
@@ -36,40 +40,56 @@ function get_id {
 
 # Parse S3 file path
 S3_DIR=$(dirname $PATH1)
-FILE1=${PATH1##*/}
-PREFIX=${FILE1%.}
-echo $PREFIX
+FILE_NAME=${PATH1##*/}
+PREFIX=${FILE_NAME%.*.*}
 
-if [ $MODE == paired ]
+# If processing multiple FASTQ files, create a single name for the output file
+if [ $MODE == paired ] && [ $REPROCESS == 0 ];
 then
     PREFIX=$(echo $PREFIX | awk '{gsub("_R[1-2]_", "_")}1')
 fi
-
-echo $PREFIX
     
 # Create temporary directory for input files
-# TMP_DIR=/results/${SAMPLE}_tmp/
+TMP_DIR=/results/${PREFIX}_tmp/
 # if [ ! -e "$TMP_DIR" ]; then
 #     mkdir "$TMP_DIR"
 # fi
 
+FILE1=${TMP_DIR}${FILE_NAME}
 
-# Download S3 file
+# Download S3 files
 echo "Copying $PATH1 to $FILE1"
-
 # aws s3 cp \
-#     $S3_PATH \
-#     $INPUT_FILE ;
+#     $PATH1 \
+#     $FILE1 ;
+echo
 
+# Get second FASTQ file if necessary
+if [ $MODE == paired ] && [ $REPROCESS = 0 ];
+then
+    FILE2=${TMP_DIR}${PATH2##*/}
+    
+    echo "Copying $PATH2 to $FILE2"
+    # aws s3 cp \
+    #     $PATH2 \
+    #     $FILE2 ;
+    echo
+fi
+
+INPUT="${FILE1} ${FILE2}"
 
 # Define SNAPR output file
 OUTPUT_FILE=${TMP_DIR}${PREFIX}.snap.bam
+
+OPTIONS="${MODE} ${GENOME} ${TRANSCRIPTOME} ${ENSEMBL} ${INPUT} -o ${OUTPUT_FILE} -M -rg ${PREFIX} -so -ku"
+
+echo $OPTIONS
 
 # Run SNAPR
 # time snapr $MODE \
 #     $GENOME \
 #     $TRANSCRIPTOME \
-#     $ENSEMBLE \
+#     $ENSEMBL \
 #     $INPUT_FILE \
 #     -o $OUTPUT_FILE \
 #     -M \

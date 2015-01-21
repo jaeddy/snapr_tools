@@ -162,5 +162,5 @@ EOF
 done
 
 rm $QSUB_BASE
-rm $FILE_LIST
+# rm $FILE_LIST
 

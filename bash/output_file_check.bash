@@ -1,8 +1,12 @@
 #!/bin/bash
 
-BUCKET="s3://mayo-prelim-rnaseq"
-SUBDIR="PSP_Samples"
-EXTENSION=.bam
+# BUCKET="s3://mayo-prelim-rnaseq"
+# SUBDIR="PSP_Samples"
+# EXTENSION=.bam
+
+BUCKET=$1
+SUBDIR=$2
+EXTENSION=$3
 
 # Get full list of all files from S3 bucket for the specified group
 FILE_LIST=`mktemp s3-seq-files.XXXXXXXX`
@@ -31,6 +35,7 @@ function get_id {
     done < $1
 } 
 
+# Find any sample IDs in the source data that are not present in outputs
 MISSED_IDS=`mktemp missed-files.XXXXXXXX`
 comm -23 <(get_id $SOURCE_FILES) <(get_id $SNAPR_FILES) > $MISSED_IDS
 

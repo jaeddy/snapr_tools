@@ -31,12 +31,12 @@ function usage {
 	echo
 }
 
-while getopts "g:x:Ldh" ARG; do
+while getopts "q:N:E:dh" ARG; do
 	case "$ARG" in
-	    d ) DISPONLY=1;;
 	    q ) QUEUE=$OPTARG;;
 		N ) NAME=$OPTARG;;
 		E ) EMAIL=$OPTARG;;
+	    d ) DISPONLY=1;;
 		h ) usage; exit 0;;
 		* ) usage; exit 1;;
 	esac

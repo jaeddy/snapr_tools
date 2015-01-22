@@ -22,7 +22,7 @@ PAIR_LABEL="_R[1-2]_"
 # Default options for SGE/qsub parameters
 PROCS=16
 MEM="230.0G"
-NAME='default'
+NAME="s3_snapr"
 QUEUE=all.q
 EMAIL="bob@bob.com"
 
@@ -35,19 +35,25 @@ ENSEMBL="/resources/Homo_sapiens.GRCh37.68.gtf"
 ######## Parse inputs #########################################################
 
 function usage {
-	echo "$0: [-m mem(3.8G,15.8G) [-p num_slots] [-q queue] [-N jobname] [-e email_address] [-g] -p prefix -1 file1.fastq -2 file2.fastq -o output_dir -b"
+	echo "$0: -b s3_bucket [-L file_list] -m mode (paired/single) -f format (bam/fastq) [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-e ref_transcriptome] [-p num_procs] [-q queue] [-N jobname] [-M mem(3.8G,15.8G)] [-E email_address]"
 	echo
 }
 
-while getopts "b:L:m:n:s:N:f:h" ARG; do
+while getopts "b:L:m:f:l:g:t:e:p:q:N:E:h" ARG; do
 	case "$ARG" in
 	    b ) BUCKET=$OPTARG;;
 	    L ) IN_LIST=$OPTARG; FILE_LIST=$IN_LIST;;
 	    m ) MODE=$OPTARG;;
-		n ) PROCS=$OPTARG;;
-		s ) MEM=$OPTARG;;
-		N ) NAME=$OPTARG;;
         f ) FORMAT=$OPTARG;;
+        l ) PAIR_LABEL=$OPTARG;;
+        g ) GENOME=$OPTARG;;
+		t ) TRANSCRIPTOME=$OPTARG;;
+		e ) ENSEMBL=$OPTARG;;
+		p ) PROCS=$OPTARG;;
+		q ) QUEUE=$OPTARG;;
+		N ) NAME=$OPTARG;;
+		M ) MEM=$OPTARG;;
+		E ) EMAIL=$OPTARG;;
 		h ) usage; exit 0;;
 		* ) usage; exit 1;;
 	esac
@@ -182,28 +188,25 @@ do
         PATH2=${BUCKET}/$(echo $FILE_MATCH | awk '{print $2}')
         INPUT="${INPUT} -2 ${PATH2}"
     fi
-    
-    echo "Submitting the following job:"
-    echo "$JOB_SCRIPT $OPTIONS $INPUT $REF_FILES"
-    echo
-    $JOB_SCRIPT $OPTIONS $INPUT $REF_FILES
         
     JOB_SETTINGS=`mktemp qsub-job.XXXXXXXX`
     cat > $JOB_SETTINGS <<EOF
 
 ### Job settings ###################################################
 
-$JOB_SCRIPT -m ${MODE} ${PATH1} ${PATH2} \
-    -g $GENOME \
-    -t $TRANSCRIPTOME \
-    -e $ENSEMBL
+$JOB_SCRIPT $OPTIONS $INPUT $REF_FILES
     
 EOF
     
     SUBMIT_FILE=`mktemp qsub-submit.XXXXXXXX`
     cat $QSUB_BASE $JOB_SETTINGS > $SUBMIT_FILE
     
-#     cat $SUBMIT_FILE
+    cat $SUBMIT_FILE
+    
+    echo "Submitting the following job:"
+    echo "$JOB_SCRIPT $OPTIONS $INPUT $REF_FILES"
+    echo
+    $JOB_SCRIPT $OPTIONS $INPUT $REF_FILES
     
     rm $JOB_SETTINGS
     rm $SUBMIT_FILE

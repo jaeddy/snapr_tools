@@ -154,7 +154,7 @@ then
     OPTIONS="${OPTIONS} -l ${PAIR_LABEL}"
 fi
 
-REF_FILES="-g ${GENOME} -t ${TRANSCRIPTOME} -e ${GTF_FILE}"
+REF_FILES="-g ${GENOME} -t ${TRANSCRIPTOME} -x ${GTF_FILE}"
 
 ######## Submit s3_snapr.bash jobs for each sample ############################
 

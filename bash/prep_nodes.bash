@@ -139,7 +139,8 @@ fi
 
 EOF
 
-cat $SUBMIT_FILE
+qsub $QSUBOPTS < $SUBMIT_FILE
+rm $SUBMIT_FILE
 
 done
 

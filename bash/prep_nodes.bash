@@ -22,20 +22,23 @@ NAME="snapr_node_prep"
 QUEUE=all.q
 EMAIL="bob@bob.com"
 
+# Default behavior for script (print job settings vs. submit with qsub)
+DISPONLY=0
 
 ######## Parse inputs #########################################################
 
 function usage {
-	echo "$0: [-s species] [-g fasta_file] [-x gtf_file] [-L] cluster_name"
+	echo "$0: [-s species] [-g fasta_file] [-x gtf_file] [-L]"
 	echo
 }
 
-while getopts "s:g:x:Lh" ARG; do
+while getopts "s:g:x:Ldh" ARG; do
 	case "$ARG" in
 	    s ) SPECIES=$OPTARG;;
 	    g ) FASTA_FILE=$OPTARG;;
 	    x ) GTF_FILE=$OPTARG;;
 	    L ) LOCAL=1;;
+	    d ) DISPONLY=1;
 		h ) usage; exit 0;;
 		* ) usage; exit 1;;
 	esac
@@ -139,7 +142,16 @@ fi
 
 EOF
 
-qsub $QSUBOPTS < $SUBMIT_FILE
+if [ $DISPONLY == 1 ]; 
+then
+    echo "#$ QSUBOPTS"
+    cat $SUBMIT_FILE
+else    
+    echo "Prepping node $NODE"
+    echo
+    qsub $QSUBOPTS < $SUBMIT_FILE
+fi
+
 rm $SUBMIT_FILE
 
 done

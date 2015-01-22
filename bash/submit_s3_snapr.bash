@@ -31,15 +31,17 @@ GENOME="/resources/genome/"
 TRANSCRIPTOME="/resources/transcriptome/"
 GTF_FILE="/resources/assemblies/ref-transcriptome.gtf"
 
+# Default behavior for script (print job settings vs. submit with qsub)
+DISPONLY=0
 
 ######## Parse inputs #########################################################
 
 function usage {
-	echo "$0: -b s3_bucket [-L file_list] -m mode (paired/single) -f format (bam/fastq) [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome] [-p num_procs] [-q queue] [-N jobname] [-M mem(3.8G,15.8G)] [-E email_address]"
+	echo "$0: -b s3_bucket [-L file_list] -m mode (paired/single) -f format (bam/fastq) [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome] [-p num_procs] [-q queue] [-N jobname] [-M mem(3.8G,15.8G)] [-E email_address] [-d]"
 	echo
 }
 
-while getopts "b:L:m:f:l:g:t:e:p:q:N:E:h" ARG; do
+while getopts "b:L:m:f:l:g:t:e:p:q:N:E:dh" ARG; do
 	case "$ARG" in
 	    b ) BUCKET=$OPTARG;;
 	    L ) IN_LIST=$OPTARG; FILE_LIST=$IN_LIST;;
@@ -54,6 +56,7 @@ while getopts "b:L:m:f:l:g:t:e:p:q:N:E:h" ARG; do
 		N ) NAME=$OPTARG;;
 		M ) MEM=$OPTARG;;
 		E ) EMAIL=$OPTARG;;
+		w ) DISPONLY=1
 		h ) usage; exit 0;;
 		* ) usage; exit 1;;
 	esac
@@ -189,14 +192,17 @@ EOF
     
     SUBMIT_FILE=`mktemp qsub-submit.XXXXXXXX`
     cat $QSUB_BASE $JOB_SETTINGS > $SUBMIT_FILE
-    
-    cat $SUBMIT_FILE
-    
-    echo "Submitting the following job:"
-    echo "$JOB_SCRIPT $OPTIONS $INPUT $REF_FILES"
-    echo
-    qsub $QSUBOPTS < $SUBMIT_FILE
-    #$JOB_SCRIPT $OPTIONS $INPUT $REF_FILES
+
+    if [ $DISPONLY == 1 ]; 
+    then
+        echo "#$ QSUBOPTS"
+        cat $SUBMIT_FILE
+    else    
+        echo "Submitting the following job:"
+        echo "$JOB_SCRIPT $OPTIONS $INPUT $REF_FILES"
+        echo
+        qsub $QSUBOPTS < $SUBMIT_FILE
+    fi
     
     rm $JOB_SETTINGS
     rm $SUBMIT_FILE

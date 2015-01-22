@@ -7,7 +7,7 @@
 ######## Specify defaults & examples ##########################################
 
 # Default options for S3-stored references files
-S3_BUCKET="s3://snapr-ref-assemblies
+S3_BUCKET="s3://snapr-ref-assemblies"
 SPECIES="human"
 HUMAN_FASTA="Homo_sapiens.GRCh38.dna.SORTED.fa"
 HUMAN_GTF="Homo_sapiens.GRCh38.77.gtf"
@@ -127,15 +127,11 @@ mkdir /resources/transcriptome
 
 # Copy and rename assembly files from S3
 
-if [ "$LOCAL" == 0 ];
+if [ $LOCAL == 0 ];
 then
-    aws s3 cp \
-        $FASTA_SRC \
-        /resources/genome/ref-genome.fa ;
+    aws s3 cp $FASTA_SRC resources/genome/ref-genome.fa ;
 
-    aws s3 cp \
-        $GTF_SRC \
-        /resources/transcriptome/ref-transcriptome.gtf ;
+    aws s3 cp $GTF_SRC resources/transcriptome/ref-transcriptome.gtf ;
 else
     cp $FASTA_FILE /resources/genome/ref-genome.fa ;
     cp $GTF_FILE /resources/transcriptome/ref-transcriptome.gtf

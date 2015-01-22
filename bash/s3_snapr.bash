@@ -20,7 +20,7 @@ ENSEMBL="/resources/Homo_sapiens.GRCh37.68.gtf"
 ######## Parse inputs #########################################################
 
 function usage {
-	echo "$0: [-m mode (paired/single)] [-r] -1 s3://path_to_file [-2 s3://path_to_paired_file] [-l pair_file_label] -g genome_index -t transcriptome_index -e ref_transcriptome"
+	echo "$0: [-m mode (paired/single)] [-r] -1 s3://path_to_file [-2 s3://path_to_paired_file] [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-e ref_transcriptome]"
 	echo
 }
 

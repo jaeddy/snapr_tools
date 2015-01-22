@@ -12,15 +12,15 @@ REPROCESS=0
 PAIR_LABEL="_R[1-2]_"
 
 # Default reference paths
-GENOME="/resources/genome20/"
-TRANSCRIPTOME="/resources/transcriptome20/"
-ENSEMBL="/resources/Homo_sapiens.GRCh37.68.gtf"
+GENOME="/resources/genome/"
+TRANSCRIPTOME="/resources/transcriptome/"
+GTF_FILE="/resources/assemblies/ref-transcriptome.gtf"
 
 
 ######## Parse inputs #########################################################
 
 function usage {
-	echo "$0: [-m mode (paired/single)] [-r] -1 s3://path_to_file [-2 s3://path_to_paired_file] [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-e ref_transcriptome]"
+	echo "$0: [-m mode (paired/single)] [-r] -1 s3://path_to_file [-2 s3://path_to_paired_file] [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome]"
 	echo
 }
 
@@ -33,7 +33,7 @@ while getopts "m:r1:2:l:g:t:e:h" ARG; do
 	    l ) PAIR_LABEL=$OPTARG;;
 		g ) GENOME=$OPTARG;;
 		t ) TRANSCRIPTOME=$OPTARG;;
-		e ) ENSEMBL=$OPTARG;;
+		x ) GTF_FILE=$OPTARG;;
 		h ) usage; exit 0;;
 		* ) usage; exit 1;;
 	esac
@@ -109,7 +109,7 @@ SNAPR_EXEC="snapr"
 # Define SNAPR output file
 OUTPUT_FILE=${TMP_DIR}${PREFIX}.snap.bam
 
-REF_FILES="${GENOME} ${TRANSCRIPTOME} ${ENSEMBL}"
+REF_FILES="${GENOME} ${TRANSCRIPTOME} ${GTF_FILE}"
 OTHER="-M -rg ${PREFIX} -so -ku"
 
 SNAPR_OPTIONS="${MODE} ${REF_FILES} ${INPUT} -o ${OUTPUT_FILE} ${OTHER}"

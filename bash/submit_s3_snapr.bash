@@ -27,15 +27,15 @@ QUEUE=all.q
 EMAIL="bob@bob.com"
 
 # Default reference paths
-GENOME="/resources/genome20/"
-TRANSCRIPTOME="/resources/transcriptome20/"
-ENSEMBL="/resources/Homo_sapiens.GRCh37.68.gtf"
+GENOME="/resources/genome/"
+TRANSCRIPTOME="/resources/transcriptome/"
+GTF_FILE="/resources/assemblies/ref-transcriptome.gtf"
 
 
 ######## Parse inputs #########################################################
 
 function usage {
-	echo "$0: -b s3_bucket [-L file_list] -m mode (paired/single) -f format (bam/fastq) [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-e ref_transcriptome] [-p num_procs] [-q queue] [-N jobname] [-M mem(3.8G,15.8G)] [-E email_address]"
+	echo "$0: -b s3_bucket [-L file_list] -m mode (paired/single) -f format (bam/fastq) [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome] [-p num_procs] [-q queue] [-N jobname] [-M mem(3.8G,15.8G)] [-E email_address]"
 	echo
 }
 
@@ -48,7 +48,7 @@ while getopts "b:L:m:f:l:g:t:e:p:q:N:E:h" ARG; do
         l ) PAIR_LABEL=$OPTARG;;
         g ) GENOME=$OPTARG;;
 		t ) TRANSCRIPTOME=$OPTARG;;
-		e ) ENSEMBL=$OPTARG;;
+		x ) GTF_FILE=$OPTARG;;
 		p ) PROCS=$OPTARG;;
 		q ) QUEUE=$OPTARG;;
 		N ) NAME=$OPTARG;;
@@ -59,17 +59,6 @@ while getopts "b:L:m:f:l:g:t:e:p:q:N:E:h" ARG; do
 	esac
 done
 shift $(($OPTIND - 1)) 
-
-# function submit_job {
-#     echo $("-S /bin/bash -V -cwd -j y" \ # basic options
-#         "-N job.${PREFIX}" \ # job name
-#         "-pe orte $PROCS" \ # number of processors
-#         "-q $QUEUE" \ # submission queue
-#         "-M $EMAIL -m beas" \ # notification email
-#         "-l virtual_free=$MEM -l h_vmem=$MEM" \ # minimum memory
-#         "-b y $SCRIPT_PATH $S3_PATH $EBS_NAME") ;
-# }
-# submit_job
 
 
 ######## Construct submission file with qsub options ##########################
@@ -162,7 +151,7 @@ then
     OPTIONS="${OPTIONS} -l ${PAIR_LABEL}"
 fi
 
-REF_FILES="-g ${GENOME} -t ${TRANSCRIPTOME} -e ${ENSEMBL}"
+REF_FILES="-g ${GENOME} -t ${TRANSCRIPTOME} -e ${GTF_FILE}"
 
 ######## Submit s3_snapr.bash jobs for each sample ############################
 

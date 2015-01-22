@@ -133,8 +133,8 @@ then
 
     aws s3 cp $GTF_SRC resources/transcriptome/ref-transcriptome.gtf ;
 else
-    cp $FASTA_FILE /resources/genome/ref-genome.fa ;
-    cp $GTF_FILE /resources/transcriptome/ref-transcriptome.gtf
+    cp $FASTA_FILE /resources/assemblies/ref-genome.fa ;
+    cp $GTF_FILE /resources/assemblies/ref-transcriptome.gtf
 fi
 
 EOF

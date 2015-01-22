@@ -20,11 +20,11 @@ GTF_FILE="/resources/assemblies/ref-transcriptome.gtf"
 ######## Parse inputs #########################################################
 
 function usage {
-	echo "$0: [-m mode (paired/single)] [-r] -1 s3://path_to_file [-2 s3://path_to_paired_file] [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome]"
+	echo "$0: [-m mode (paired/single)] [-r] -1 s3://path_to_file [-2 s3://path_to_paired_file] [-l pair_file_label] [-g genome_index] [-x transcriptome_index] [-x ref_transcriptome]"
 	echo
 }
 
-while getopts "m:r1:2:l:g:t:e:h" ARG; do
+while getopts "m:r1:2:l:g:x:e:h" ARG; do
 	case "$ARG" in
 	    m ) MODE=$OPTARG;;
 	    r ) REPROCESS=1;;
@@ -74,9 +74,9 @@ fi
     
 # Create temporary directory for input files
 TMP_DIR=/results/${PREFIX}_tmp/
-# if [ ! -e "$TMP_DIR" ]; then
-#     mkdir "$TMP_DIR"
-# fi
+if [ ! -e "$TMP_DIR" ]; then
+    mkdir "$TMP_DIR"
+fi
 
 FILE1=${TMP_DIR}${FILE_NAME}
 
@@ -93,9 +93,9 @@ then
     FILE2=${TMP_DIR}${PATH2##*/}
     
     echo "Copying $PATH2 to $FILE2"
-    # aws s3 cp \
-    #     $PATH2 \
-    #     $FILE2 ;
+#     aws s3 cp \
+#         $PATH2 \
+#         $FILE2 ;
     echo
 fi
 
@@ -122,8 +122,9 @@ echo "$SNAPR_EXEC $SNAPR_OPTIONS"
 ######## Copy and clean up results ############################################
 
 # Remove original file
-# rm $INPUT_FILE
-# 
+# rm $FILE1 
+# rm $FILE2
+
 # Copy files to S3
 # aws s3 cp \
 #     $TMP_DIR \

@@ -1,36 +1,52 @@
 #!/bin/bash
 
-# BUCKET="s3://mayo-prelim-rnaseq"
-# SUBDIR="AD_Samples"
-BUCKET="s3://ufl-u01-rnaseq"
+# This script will take a list of file paths in an S3 bucket (or query the 
+# bucket directly to generate a list of all non-SNAPR-generated FASTQ or BAM
+# files. Based on this list, calls to `s3_snapr.bash` are distributed across
+# cluster nodes with `qsub`. Each job downloads data for an individual sample
+# from S3, processes the file(s) with SNAPR, and uploads the results back to
+# the original bucket.
 
+######## Specify defaults & examples ##########################################
+
+# Example inputs for S3 bucket subdirectory
+BUCKET="s3://mayo-prelim-rnaseq"
+# SUBDIR="AD_Samples"
+# BUCKET="s3://ufl-u01-rnaseq"
+
+# Default options for file format and alignment mode
+MODE=paired
+FORMAT=fastq
+PAIR_LABEL="_R[1-2]_"
+
+# Default options for SGE/qsub parameters
 PROCS=16
 MEM="230.0G"
 NAME='default'
 QUEUE=all.q
 EMAIL="bob@bob.com"
 
-FILE1='file1.fastq'
-FILE2='file2.fastq'
-FORMAT=fastq
+# Default reference paths
+GENOME="/resources/genome20/"
+TRANSCRIPTOME="/resources/transcriptome20/"
+ENSEMBL="/resources/Homo_sapiens.GRCh37.68.gtf"
 
-GENOME="/snap/Genomes/GRCh37/snap/genome20/"
-TRANSCRIPTOME="/snap/Genomes/GRCh37/snap/transcriptome20/"
-ENSEMBL="/snap/Genomes/GRCh37/gtf/Homo_sapiens.GRCh37.68.gtf"
+
+######## Parse inputs #########################################################
 
 function usage {
 	echo "$0: [-m mem(3.8G,15.8G) [-p num_slots] [-q queue] [-N jobname] [-e email_address] [-g] -p prefix -1 file1.fastq -2 file2.fastq -o output_dir -b"
 	echo
 }
 
-while getopts "b:n:s:N:1:2:f:h" ARG; do
+while getopts "b:L:m:n:s:N:f:h" ARG; do
 	case "$ARG" in
 	    b ) BUCKET=$OPTARG;;
+	    L ) IN_LIST=$OPTARG; FILE_LIST=$IN_LIST;;
+	    m ) MODE=$OPTARG;;
 		n ) PROCS=$OPTARG;;
 		s ) MEM=$OPTARG;;
 		N ) NAME=$OPTARG;;
-        1 ) FILE1=$OPTARG;;
-        2 ) FILE2=$OPTARG;;
         f ) FORMAT=$OPTARG;;
 		h ) usage; exit 0;;
 		* ) usage; exit 1;;
@@ -49,8 +65,10 @@ shift $(($OPTIND - 1))
 # }
 # submit_job
 
-QSUB_BASE=`mktemp qsub-settings.XXXXXXXX`
 
+######## Construct submission file with qsub options ##########################
+
+QSUB_BASE=`mktemp qsub-settings.XXXXXXXX`
 cat > $QSUB_BASE <<EOF
 #!/bin/bash
 
@@ -88,27 +106,30 @@ cat > $QSUB_BASE <<EOF
 EOF
 
 echo "#$ $QSUBOPTS"
-# cat $QSUB_BASE
-
-# Specify path to job script
-JOB_SCRIPT=shell/s3_snapr.sh
 
 
+######## Assemble & prepare inputs for s3_snapr.bash ##########################
 
+# Define more explicit extension formats & set reprocess flag if bam format
 case "$FORMAT" in
-    bam ) EXTENSION=.bam;;
+    bam ) EXTENSION=.bam; REPROCESS="-r";;
     fastq ) EXTENSION=.fastq.gz;;
 esac
 
-# Get full list of all files from S3 bucket for the specified group
-FILE_LIST=`mktemp s3-seq-files.XXXXXXXX`
-aws s3 ls ${BUCKET}/${SUBDIR} --recursive \
-    | grep ${EXTENSION}$ \
-    | awk '{print $4}' \
-    > $FILE_LIST ;
+# Search S3 bucket for files, if no input list is provided
+if [ ! -e "$FILE_LIST" ];
+then
+    # Get full list of all files from S3 bucket for the specified group
+    FILE_LIST=`mktemp s3-seq-files.XXXXXXXX`
+    aws s3 ls ${BUCKET}/${SUBDIR} --recursive \
+        | grep ${EXTENSION}$ \
+        | grep -v .snap \
+        | awk '{print $4}' \
+        > $FILE_LIST ;
+fi
 
-NUM_FILES=$(wc -l ${FILE_LIST} | awk '{print $1}')
-echo "$NUM_FILES files..."
+NUM_FILES=`expr $(wc -l ${FILE_LIST} | awk '{print $1}') - 1`
+echo "$NUM_FILES ${EXTENSION} files detected..."
 
 # Function to pull out sample IDs from file paths
 function get_id {
@@ -121,11 +142,26 @@ function get_id {
 }
 
 # Get list of unique sample identifiers
-NUM_IDS=$(get_id $FILE_LIST | wc -l | awk '{print $1}')
-echo "$NUM_IDS ids..."
+NUM_IDS=`expr $(get_id ${FILE_LIST} | uniq | wc -l | awk '{print $1}') - 1`
+echo "$NUM_IDS unique IDs detected..."
+
+
+######## Assemble options for running s3_snapr.bash ###########################
+
+JOB_SCRIPT=bash/s3_snapr.bash
+
+OPTIONS="-m ${MODE} ${REPROCESS}"
+if [ -z ${REPROCESS+x} ] && [ $MODE == paired ];
+then
+    OPTIONS="${OPTIONS} -l ${PAIR_LABEL}"
+fi
+
+REF_FILES="-g ${GENOME} -t ${TRANSCRIPTOME} -e ${ENSEMBL}"
+
+######## Submit s3_snapr.bash jobs for each sample ############################
 
 count=0
-# Pull out all paired file paths
+# Pull out all file paths matching unique sample IDs
 get_id ${FILE_LIST} | uniq | head -n 4 | while read ID
 do
     count=$(($count+1)) # counter for testing
@@ -134,18 +170,30 @@ do
         break
     fi
     
-    FILE_PAIR=$(grep $ID $FILE_LIST)
+    FILE_MATCH=$(grep $ID $FILE_LIST)
     
-    FILE1=${BUCKET}/$(echo $FILE_PAIR | awk '{print $1}')
-    FILE2=${BUCKET}/$(echo $FILE_PAIR | awk '{print $2}')
+    PATH1=${BUCKET}/$(echo $FILE_MATCH | awk '{print $1}')
+    INPUT="-1 ${PATH1}"
     
+    # Define second input file path only if extension format is FASTQ (i.e.,
+    # the reprocess flag is undefined) and mode is paired
+    if [ -z ${REPROCESS+x} ] && [ $MODE == paired ];
+    then
+        PATH2=${BUCKET}/$(echo $FILE_MATCH | awk '{print $2}')
+        INPUT="${INPUT} -2 ${PATH2}"
+    fi
+    
+    echo "Submitting the following job:"
+    echo "$JOB_SCRIPT $OPTIONS $INPUT $REF_FILES"
+    echo
+    $JOB_SCRIPT $OPTIONS $INPUT $REF_FILES
+        
     JOB_SETTINGS=`mktemp qsub-job.XXXXXXXX`
-    echo $JOB_SETTINGS
     cat > $JOB_SETTINGS <<EOF
 
 ### Job settings ###################################################
 
-$JOB_SCRIPT -p $FILE1 $FILE2 \
+$JOB_SCRIPT -m ${MODE} ${PATH1} ${PATH2} \
     -g $GENOME \
     -t $TRANSCRIPTOME \
     -e $ENSEMBL
@@ -155,12 +203,15 @@ EOF
     SUBMIT_FILE=`mktemp qsub-submit.XXXXXXXX`
     cat $QSUB_BASE $JOB_SETTINGS > $SUBMIT_FILE
     
-    cat $SUBMIT_FILE
+#     cat $SUBMIT_FILE
     
     rm $JOB_SETTINGS
     rm $SUBMIT_FILE
 done
 
 rm $QSUB_BASE
-# rm $FILE_LIST
+if [ ! -e "$IN_LIST" ];
+then
+    rm $FILE_LIST
+fi
 

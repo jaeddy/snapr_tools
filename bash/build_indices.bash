@@ -20,6 +20,10 @@ EMAIL="bob@bob.com"
 # Default behavior for script (print job settings vs. submit with qsub)
 DISPONLY=0
 
+# Define snapr executable
+SNAPR_EXEC="snapr"
+
+
 ######## Parse inputs #########################################################
 
 function usage {
@@ -78,8 +82,6 @@ cat > $SUBMIT_FILE <<EOF
 
 
 ### Job settings ###################################################
-
-SNAPR_EXEC="snapr"
 
 # Build genome index
 $SNAPR_EXEC index $FASTA_FILE $GENOME -bSpace ;

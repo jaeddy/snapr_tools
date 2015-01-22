@@ -56,7 +56,7 @@ while getopts "b:L:m:f:l:g:t:e:p:q:N:E:dh" ARG; do
 		N ) NAME=$OPTARG;;
 		M ) MEM=$OPTARG;;
 		E ) EMAIL=$OPTARG;;
-		w ) DISPONLY=1
+		d ) DISPONLY=1
 		h ) usage; exit 0;;
 		* ) usage; exit 1;;
 	esac

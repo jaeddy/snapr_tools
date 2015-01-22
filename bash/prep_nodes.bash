@@ -28,16 +28,19 @@ DISPONLY=0
 ######## Parse inputs #########################################################
 
 function usage {
-	echo "$0: [-s species] [-g fasta_file] [-x gtf_file] [-L]"
+	echo "$0: [-s species] [-g fasta_file] [-x gtf_file] [-L] [-q queue] [-N jobname] [-M mem(3.8G,15.8G)] [-E email_address] [-d]"
 	echo
 }
 
-while getopts "s:g:x:Ldh" ARG; do
+while getopts "s:g:x:Lq:N:E:dh" ARG; do
 	case "$ARG" in
 	    s ) SPECIES=$OPTARG;;
 	    g ) FASTA_FILE=$OPTARG;;
 	    x ) GTF_FILE=$OPTARG;;
 	    L ) LOCAL=1;;
+        q ) QUEUE=$OPTARG;;
+		N ) NAME=$OPTARG;;
+		E ) EMAIL=$OPTARG;;
 	    d ) DISPONLY=1;;
 		h ) usage; exit 0;;
 		* ) usage; exit 1;;
@@ -82,7 +85,7 @@ cat > $SUBMIT_FILE <<EOF
 #$ -cwd
 
 # Set the name of the job
-#$ -N job.${PREFIX}
+#$ -N job.${NAME}
 
 # Combine output and error files into single output file (y=yes, n=no)
 #$ -j y

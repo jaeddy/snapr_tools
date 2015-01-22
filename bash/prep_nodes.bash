@@ -38,7 +38,7 @@ while getopts "s:g:x:Ldh" ARG; do
 	    g ) FASTA_FILE=$OPTARG;;
 	    x ) GTF_FILE=$OPTARG;;
 	    L ) LOCAL=1;;
-	    d ) DISPONLY=1;
+	    d ) DISPONLY=1;;
 		h ) usage; exit 0;;
 		* ) usage; exit 1;;
 	esac
@@ -132,9 +132,9 @@ mkdir /resources/transcriptome
 
 if [ $LOCAL == 0 ];
 then
-    aws s3 cp $FASTA_SRC resources/genome/ref-genome.fa ;
+    aws s3 cp $FASTA_SRC /resources/genome/ref-genome.fa ;
 
-    aws s3 cp $GTF_SRC resources/transcriptome/ref-transcriptome.gtf ;
+    aws s3 cp $GTF_SRC /resources/transcriptome/ref-transcriptome.gtf ;
 else
     cp $FASTA_FILE /resources/assemblies/ref-genome.fa ;
     cp $GTF_FILE /resources/assemblies/ref-transcriptome.gtf

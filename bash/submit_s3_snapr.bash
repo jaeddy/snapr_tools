@@ -21,7 +21,7 @@ PAIR_LABEL="_R[1-2]_"
 
 # Default options for SGE/qsub parameters
 PROCS=16
-MEM="230.0G"
+MEM="60.0G"
 NAME="s3_snapr"
 QUEUE=all.q
 EMAIL="bob@bob.com"
@@ -194,7 +194,7 @@ do
 
 ### Job settings ###################################################
 
-$JOB_SCRIPT $OPTIONS $INPUT $REF_FILES
+time $JOB_SCRIPT $OPTIONS $INPUT $REF_FILES
     
 EOF
     
@@ -206,7 +206,8 @@ EOF
     echo "Submitting the following job:"
     echo "$JOB_SCRIPT $OPTIONS $INPUT $REF_FILES"
     echo
-    $JOB_SCRIPT $OPTIONS $INPUT $REF_FILES
+    qsub $QSUBOPTS < $SUBMIT_FILE
+    #$JOB_SCRIPT $OPTIONS $INPUT $REF_FILES
     
     rm $JOB_SETTINGS
     rm $SUBMIT_FILE

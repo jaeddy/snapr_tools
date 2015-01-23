@@ -81,10 +81,10 @@ cat > $SUBMIT_FILE <<EOF
 ### Job settings ###################################################
 
 # Build genome index
-$SNAPR_EXEC index $FASTA_FILE $GENOME -bSpace ;
+time $SNAPR_EXEC index $FASTA_FILE $GENOME -bSpace ;
 
 # Build transcriptome index
-$SNAPR_EXEC transcriptome $GTF_FILE $FASTA_FILE $TRANSCRIPTOME -bSpace ;
+time $SNAPR_EXEC transcriptome $GTF_FILE $FASTA_FILE $TRANSCRIPTOME -bSpace ;
 
 EOF
 

@@ -82,9 +82,9 @@ FILE1=${TMP_DIR}${FILE_NAME}
 
 # Download S3 files
 echo "Copying $PATH1 to $FILE1"
-# aws s3 cp \
-#     $PATH1 \
-#     $FILE1 ;
+aws s3 cp \
+    $PATH1 \
+    $FILE1 ;
 echo
 
 # Get second FASTQ file if necessary
@@ -93,9 +93,9 @@ then
     FILE2=${TMP_DIR}${PATH2##*/}
     
     echo "Copying $PATH2 to $FILE2"
-#     aws s3 cp \
-#         $PATH2 \
-#         $FILE2 ;
+    aws s3 cp \
+        $PATH2 \
+        $FILE2 ;
     echo
 fi
 
@@ -118,7 +118,7 @@ SNAPR_OPTIONS="${MODE} ${REF_FILES} ${INPUT} -o ${OUTPUT_FILE} ${OTHER}"
 echo "$SNAPR_EXEC $SNAPR_OPTIONS"
 
 # Run SNAPR
-# time $SNAPR_EXEC $SNAPR_OPTIONS
+time $SNAPR_EXEC $SNAPR_OPTIONS
 
 ######## Copy and clean up results ############################################
 

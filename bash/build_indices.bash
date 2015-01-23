@@ -46,8 +46,6 @@ shift $(($OPTIND - 1))
 
 ######## Construct submission file with qsub & job settings ###################
 
-HOST_NAME=$(hostname)
-
 qhost | awk 'NR>2 {print $1}' | grep -v global | while read NODE; do
 
 SUBMIT_FILE=`mktemp index-build.XXXXXXXX`

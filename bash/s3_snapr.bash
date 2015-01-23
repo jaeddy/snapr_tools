@@ -108,6 +108,7 @@ SNAPR_EXEC="snapr"
 
 # Define SNAPR output file
 OUT_DIR=/results/${PREFIX}_results/
+mkdir "$OUT_DIR"
 OUTPUT_FILE=${OUT_DIR}${PREFIX}.snap.bam
 
 REF_FILES="${GENOME} ${TRANSCRIPTOME} ${GTF_FILE}"

@@ -20,11 +20,11 @@ GTF_FILE="/resources/assemblies/ref-transcriptome.gtf"
 ######## Parse inputs #########################################################
 
 function usage {
-	echo "$0: [-m mode (paired/single)] [-r] -1 s3://path_to_file [-2 s3://path_to_paired_file] [-l pair_file_label] [-g genome_index] [-x transcriptome_index] [-x ref_transcriptome]"
+	echo "$0: [-m mode (paired/single)] [-r] -1 s3://path_to_file [-2 s3://path_to_paired_file] [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome]"
 	echo
 }
 
-while getopts "m:r1:2:l:g:x:e:h" ARG; do
+while getopts "m:r1:2:l:g:t:x:h" ARG; do
 	case "$ARG" in
 	    m ) MODE=$OPTARG;;
 	    r ) REPROCESS=1;;
@@ -73,7 +73,7 @@ then
 fi
     
 # Create temporary directory for input files
-TMP_DIR=/results/${PREFIX}_tmp/
+TMP_DIR=/data/${PREFIX}_tmp/
 if [ ! -e "$TMP_DIR" ]; then
     mkdir "$TMP_DIR"
 fi
@@ -107,7 +107,8 @@ INPUT="${FILE1} ${FILE2}"
 SNAPR_EXEC="snapr"
 
 # Define SNAPR output file
-OUTPUT_FILE=${TMP_DIR}${PREFIX}.snap.bam
+OUT_DIR=/results/${PREFIX}_results/
+OUTPUT_FILE=${OUT_DIR}${PREFIX}.snap.bam
 
 REF_FILES="${GENOME} ${TRANSCRIPTOME} ${GTF_FILE}"
 OTHER="-M -rg ${PREFIX} -so -ku"

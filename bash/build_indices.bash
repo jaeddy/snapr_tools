@@ -47,9 +47,8 @@ shift $(($OPTIND - 1))
 ######## Construct submission file with qsub & job settings ###################
 
 HOST_NAME=$(hostname)
-CLUSTER_NAME=${HOST_NAME%-*}
 
-qhost | awk '{print $1}' | grep $CLUSTER_NAME | while read NODE; do
+qhost | awk 'NR>2 {print $1}' | grep -v global | while read NODE; do
 
 SUBMIT_FILE=`mktemp index-build.XXXXXXXX`
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script will take a list of file paths in an S3 bucket (or query the 
+# This script will take a list of file paths in an S3 bucket (or query the
 # bucket directly to generate a list of all non-SNAPR-generated FASTQ or BAM
 # files. Based on this list, calls to `s3_snapr.bash` are distributed across
 # cluster nodes with `qsub`. Each job downloads data for an individual sample
@@ -10,9 +10,11 @@
 ######## Specify defaults & examples ##########################################
 
 # Example inputs for S3 bucket subdirectory
-BUCKET="s3://mayo-prelim-rnaseq"
-SUBDIR="AD_Samples"
-# BUCKET="s3://ufl-u01-rnaseq"
+# BUCKET="s3://mayo-prelim-rnaseq"
+# SUBDIR="AD_Samples"
+BUCKET="s3://ufl-u01-rnaseq"
+# BUCKET="s3://rna-editing-exdata"
+# SUBDIR="chr8"
 
 # Default options for file format and alignment mode
 MODE=paired
@@ -61,7 +63,7 @@ while getopts "b:L:m:f:l:g:t:e:p:q:N:E:dh" ARG; do
 		* ) usage; exit 1;;
 	esac
 done
-shift $(($OPTIND - 1)) 
+shift $(($OPTIND - 1))
 
 
 ######## Construct submission file with qsub options ##########################
@@ -108,11 +110,12 @@ echo "#$ $QSUBOPTS"
 
 ######## Assemble & prepare inputs for s3_snapr.bash ##########################
 
-# Define more explicit extension formats & set reprocess flag if bam format
-case "$FORMAT" in
-    bam ) EXTENSION=.bam; REPROCESS="-r";;
-    fastq ) EXTENSION=.fastq.gz;;
-esac
+# Set reprocess flag if bam format
+if [ $FORMAT = bam ];
+then
+    REPROCESS="-r"
+fi
+echo "Reprocess: $REPROCESS"
 
 # Search S3 bucket for files, if no input list is provided
 if [ ! -e "$FILE_LIST" ];
@@ -120,28 +123,29 @@ then
     # Get full list of all files from S3 bucket for the specified group
     FILE_LIST=`mktemp s3-seq-files.XXXXXXXX`
     aws s3 ls ${BUCKET}/${SUBDIR} --recursive \
-        | grep ${EXTENSION}$ \
+        | grep ${FORMAT}$ \
         | grep -v .snap \
         | awk '{print $4}' \
         > $FILE_LIST ;
 fi
 
-NUM_FILES=`expr $(wc -l ${FILE_LIST} | awk '{print $1}') - 1`
-echo "$NUM_FILES ${EXTENSION} files detected..."
+NUM_FILES=`expr $(wc -l ${FILE_LIST} | awk '{print $1}')`
+echo "$NUM_FILES ${FORMAT} files detected..."
 
 # Function to pull out sample IDs from file paths
-function get_id {
-    while read line 
+function get_handle {
+    while read line
     do
         filename=${line##*/};
-        fileid=${filename%%.*}
-        echo $fileid;
+		handle=$(echo $filename \
+		| awk -v tag="(${PAIR_LABEL})+.*" '{gsub(tag, "")}1')
+		echo $handle;
     done < $1
 }
 
-# Get list of unique sample identifiers
-NUM_IDS=`expr $(get_id ${FILE_LIST} | uniq | wc -l | awk '{print $1}') - 1`
-echo "$NUM_IDS unique IDs detected..."
+# Get list of unique sample handles
+NUM_IDS=`expr $(get_handle ${FILE_LIST} | uniq | wc -l | awk '{print $1}')`
+echo "$NUM_IDS unique samples detected..."
 
 
 ######## Assemble options for running s3_snapr.bash ###########################
@@ -160,19 +164,19 @@ REF_FILES="-g ${GENOME} -t ${TRANSCRIPTOME} -x ${GTF_FILE}"
 
 count=0
 # Pull out all file paths matching unique sample IDs
-get_id ${FILE_LIST} | uniq | head -n 4 | while read ID
+get_handle ${FILE_LIST} | uniq | head -n 4 | while read ID
 do
     count=$(($count+1)) # counter for testing
     if [ $count -gt 1 ]
     then
         break
     fi
-    
+
     FILE_MATCH=$(grep $ID $FILE_LIST)
-    
+
     PATH1=${BUCKET}/$(echo $FILE_MATCH | awk '{print $1}')
     INPUT="-1 ${PATH1}"
-    
+
     # Define second input file path only if extension format is FASTQ (i.e.,
     # the reprocess flag is undefined) and mode is paired
     if [ -z ${REPROCESS+x} ] && [ $MODE == paired ];
@@ -180,30 +184,30 @@ do
         PATH2=${BUCKET}/$(echo $FILE_MATCH | awk '{print $2}')
         INPUT="${INPUT} -2 ${PATH2}"
     fi
-        
+
     JOB_SETTINGS=`mktemp qsub-job.XXXXXXXX`
     cat > $JOB_SETTINGS <<EOF
 
 ### Job settings ###################################################
 
 time $JOB_SCRIPT $OPTIONS $INPUT $REF_FILES
-    
+
 EOF
-    
+
     SUBMIT_FILE=`mktemp qsub-submit.XXXXXXXX`
     cat $QSUB_BASE $JOB_SETTINGS > $SUBMIT_FILE
 
-    if [ $DISPONLY == 1 ]; 
+    if [ $DISPONLY == 1 ];
     then
         echo "#$ QSUBOPTS"
         cat $SUBMIT_FILE
-    else    
+    else
         echo "Submitting the following job:"
         echo "$JOB_SCRIPT $OPTIONS $INPUT $REF_FILES"
         echo
         qsub $QSUBOPTS < $SUBMIT_FILE
     fi
-    
+
     rm $JOB_SETTINGS
     rm $SUBMIT_FILE
 done
@@ -213,4 +217,3 @@ if [ ! -e "$IN_LIST" ];
 then
     rm $FILE_LIST
 fi
-

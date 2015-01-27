@@ -12,9 +12,9 @@
 # Example inputs for S3 bucket subdirectory
 # BUCKET="s3://mayo-prelim-rnaseq"
 # SUBDIR="AD_Samples"
-BUCKET="s3://ufl-u01-rnaseq"
-# BUCKET="s3://rna-editing-exdata"
-# SUBDIR="chr8"
+# BUCKET="s3://ufl-u01-rnaseq"
+BUCKET="s3://rna-editing-exdata"
+SUBDIR="chr8"
 
 # Default options for file format and alignment mode
 MODE=paired
@@ -39,29 +39,29 @@ DISPONLY=0
 ######## Parse inputs #########################################################
 
 function usage {
-	echo "$0: -b s3_bucket [-L file_list] -m mode (paired/single) -f format (bam/fastq) [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome] [-p num_procs] [-q queue] [-N jobname] [-M mem(3.8G,15.8G)] [-E email_address] [-d]"
-	echo
+    echo "$0: -b s3_bucket [-L file_list] -m mode (paired/single) -f format (bam/fastq) [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome] [-p num_procs] [-q queue] [-N jobname] [-M mem(3.8G,15.8G)] [-E email_address] [-d]"
+    echo
 }
 
 while getopts "b:L:m:f:l:g:t:e:p:q:N:E:dh" ARG; do
-	case "$ARG" in
-	    b ) BUCKET=$OPTARG;;
-	    L ) IN_LIST=$OPTARG; FILE_LIST=$IN_LIST;;
-	    m ) MODE=$OPTARG;;
+    case "$ARG" in
+        b ) BUCKET=$OPTARG;;
+        L ) IN_LIST=$OPTARG; FILE_LIST=$IN_LIST;;
+        m ) MODE=$OPTARG;;
         f ) FORMAT=$OPTARG;;
         l ) PAIR_LABEL=$OPTARG;;
         g ) GENOME=$OPTARG;;
-		t ) TRANSCRIPTOME=$OPTARG;;
-		x ) GTF_FILE=$OPTARG;;
-		p ) PROCS=$OPTARG;;
-		q ) QUEUE=$OPTARG;;
-		N ) NAME=$OPTARG;;
-		M ) MEM=$OPTARG;;
-		E ) EMAIL=$OPTARG;;
-		d ) DISPONLY=1;;
-		h ) usage; exit 0;;
-		* ) usage; exit 1;;
-	esac
+        t ) TRANSCRIPTOME=$OPTARG;;
+        x ) GTF_FILE=$OPTARG;;
+        p ) PROCS=$OPTARG;;
+        q ) QUEUE=$OPTARG;;
+        N ) NAME=$OPTARG;;
+        M ) MEM=$OPTARG;;
+        E ) EMAIL=$OPTARG;;
+        d ) DISPONLY=1;;
+        h ) usage; exit 0;;
+        * ) usage; exit 1;;
+    esac
 done
 shift $(($OPTIND - 1))
 
@@ -105,17 +105,8 @@ cat > $QSUB_BASE <<EOF
 
 EOF
 
-echo "#$ $QSUBOPTS"
-
 
 ######## Assemble & prepare inputs for s3_snapr.bash ##########################
-
-# Set reprocess flag if bam format
-if [ $FORMAT = bam ];
-then
-    REPROCESS="-r"
-fi
-echo "Reprocess: $REPROCESS"
 
 # Search S3 bucket for files, if no input list is provided
 if [ ! -e "$FILE_LIST" ];
@@ -123,7 +114,7 @@ then
     # Get full list of all files from S3 bucket for the specified group
     FILE_LIST=`mktemp s3-seq-files.XXXXXXXX`
     aws s3 ls ${BUCKET}/${SUBDIR} --recursive \
-        | grep ${FORMAT}$ \
+        | grep ${FORMAT} \
         | grep -v .snap \
         | awk '{print $4}' \
         > $FILE_LIST ;
@@ -132,20 +123,29 @@ fi
 NUM_FILES=`expr $(wc -l ${FILE_LIST} | awk '{print $1}')`
 echo "$NUM_FILES ${FORMAT} files detected..."
 
+# Set reprocess flag if bam format
+if [ $FORMAT = bam ];
+    then
+    REPROCESS="-r"
+    echo "Files will be reprocessed with SNAPR."
+    echo
+fi
+
 # Function to pull out sample IDs from file paths
 function get_handle {
     while read line
     do
         filename=${line##*/};
-		handle=$(echo $filename \
-		| awk -v tag="(${PAIR_LABEL})+.*" '{gsub(tag, "")}1')
-		echo $handle;
+        handle=$(echo $filename \
+        | awk -v tag="(${PAIR_LABEL})+.*" '{gsub(tag, "")}1')
+        echo $handle;
     done < $1
 }
 
 # Get list of unique sample handles
 NUM_IDS=`expr $(get_handle ${FILE_LIST} | uniq | wc -l | awk '{print $1}')`
-echo "$NUM_IDS unique samples detected..."
+echo "$NUM_IDS unique sample(s) detected..."
+echo
 
 
 ######## Assemble options for running s3_snapr.bash ###########################
@@ -159,6 +159,7 @@ then
 fi
 
 REF_FILES="-g ${GENOME} -t ${TRANSCRIPTOME} -x ${GTF_FILE}"
+
 
 ######## Submit s3_snapr.bash jobs for each sample ############################
 

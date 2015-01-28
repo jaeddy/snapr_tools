@@ -150,7 +150,7 @@ echo
 
 ######## Assemble options for running s3_snapr.bash ###########################
 
-JOB_SCRIPT=bash/s3_snapr.bash
+JOB_SCRIPT=bash/s3_snapr.sh
 
 OPTIONS="-m ${MODE} ${REPROCESS}"
 if [ -z ${REPROCESS+x} ] && [ $MODE == paired ]; then

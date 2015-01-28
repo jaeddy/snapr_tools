@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Given a path to a file on S3 (or two files, in the case of paired-end FASTQ 
+# Given a path to a file on S3 (or two files, in the case of paired-end FASTQ
 # data, this script downloads the data, processes the file(s) with SNAPR, and
 # uploads the results back to the original bucket.
 
@@ -22,14 +22,15 @@ KEEP=0 # 0: upload outputs to S3 vs. 1: keep on local machine
 ######## Parse inputs #########################################################
 
 function usage {
-	echo "$0: [-m mode (paired/single)] [-r] -1 s3://path_to_file [-2 s3://path_to_paired_file] [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome] [-k]"
+	echo "$0: [-m mode (paired/single)] [-r] -d dir_name -1 s3://path_to_file [-2 s3://path_to_paired_file] [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome] [-k]"
 	echo
 }
 
-while getopts "m:r1:2:l:g:t:x:kh" ARG; do
+while getopts "m:rd:1:2:l:g:t:x:kh" ARG; do
 	case "$ARG" in
 	    m ) MODE=$OPTARG;;
 	    r ) REPROCESS=1;;
+		d ) S3_DIR=$OPTARG;;
 	    1 ) PATH1=$OPTARG;;
 	    2 ) PATH2=$OPTARG;;
 	    l ) PAIR_LABEL=$OPTARG;;
@@ -46,22 +47,10 @@ shift $(($OPTIND - 1))
 
 ######## Assemble & prepare data for snapr ####################################
 
-# Function to pull out sample IDs from file paths
-function get_id {
-    filename=${line##*/};
-    fileid=${filename%%.*}
-    echo $fileid;
-    < $1
-}
-
 # Parse S3 file path
-S3_DIR=$(dirname $PATH1)
-S3_UPDIR=${S3_DIR%/*}
-
-# echo $S3_UPDIR
-
 FILE_NAME=${PATH1##*/}
-if [ $REPROCESS == 0 ];
+
+if ( echo $FILE_NAME | grep -q .gz );
 then
     PREFIX=${FILE_NAME%.*.*};
 else
@@ -72,9 +61,9 @@ fi
 if [ $MODE == paired ] && [ $REPROCESS == 0 ];
 then
     PREFIX=$(echo $PREFIX \
-        | awk -v tag="$PAIR_LABEL" '{gsub(tag, "_")}1')
+        | awk -v tag="$PAIR_LABEL" '{gsub(tag, "")}1')
 fi
-    
+
 # Create temporary directory for input files
 TMP_DIR=/data/${PREFIX}_tmp/
 if [ ! -e "$TMP_DIR" ]; then
@@ -94,13 +83,14 @@ echo
 if [ $MODE == paired ] && [ $REPROCESS = 0 ];
 then
     FILE2=${TMP_DIR}${PATH2##*/}
-    
+
     echo "Copying $PATH2 to $FILE2"
     aws s3 cp \
         $PATH2 \
         $FILE2 ;
     echo
 fi
+echo
 
 # Define set of input files; if FILE2 is unassigned, only FILE1 will be used
 INPUT="${FILE1} ${FILE2}"
@@ -111,7 +101,7 @@ SNAPR_EXEC="snapr"
 
 # Define SNAPR output file
 OUT_DIR=/results/${PREFIX}_results/
-mkdir "$OUT_DIR"
+# mkdir "$OUT_DIR"
 OUTPUT_FILE=${OUT_DIR}${PREFIX}.snap.bam
 
 REF_FILES="${GENOME} ${TRANSCRIPTOME} ${GTF_FILE}"
@@ -128,16 +118,14 @@ time $SNAPR_EXEC $SNAPR_OPTIONS
 
 
 if [ ${KEEP} == 0 ]; then
-    # Remove original file(s)
-    rm $FILE1 
-    rm $FILE2
 
     # Copy files to S3
     aws s3 cp \
-        $TMP_DIR \
+        $OUT_DIR \
         $S3_DIR/snapr/ \
         --recursive ;
 
-    # Remove temporary directory
+    # Remove temporary directories
     rm -rf $TMP_DIR
+	rm -rf $OUT_DIR
 fi

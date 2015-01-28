@@ -177,7 +177,7 @@ get_handle ${FILE_LIST} | uniq | while read HANDLE; do
     FILE_MATCH=$(grep $HANDLE $FILE_LIST)
 
     PATH1=${BUCKET}/$(echo $FILE_MATCH | awk '{print $1}')
-    INPUT="-1 ${PATH1}"
+    INPUT="-d ${BUCKET}/${SUBDIR} -1 ${PATH1}"
 
     # Define second input file path only if extension format is FASTQ (i.e.,
     # the reprocess flag is undefined) and mode is paired
@@ -205,7 +205,8 @@ EOF
         echo "Submitting the following job:"
         echo "$JOB_SCRIPT $OPTIONS $INPUT $REF_FILES"
         echo
-        qsub $QSUBOPTS < $SUBMIT_FILE
+        # qsub $QSUBOPTS < $SUBMIT_FILE
+        $JOB_SCRIPT $OPTIONS $INPUT $REF_FILES
     fi
 
     rm $JOB_SETTINGS

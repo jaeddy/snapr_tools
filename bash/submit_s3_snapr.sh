@@ -168,13 +168,13 @@ REF_FILES="-g ${GENOME} -t ${TRANSCRIPTOME} -x ${GTF_FILE}"
 
 count=0
 # Pull out all file paths matching unique sample IDs
-get_handle ${FILE_LIST} | uniq | while read ID; do
+get_handle ${FILE_LIST} | uniq | while read HANDLE; do
     count=$(($count+1)) # counter for displaying preview (and testing)
     if [ $count -gt 1 ] && [ $DISPONLY == 1 ]; then
         break
     fi
 
-    FILE_MATCH=$(grep $ID $FILE_LIST)
+    FILE_MATCH=$(grep $HANDLE $FILE_LIST)
 
     PATH1=${BUCKET}/$(echo $FILE_MATCH | awk '{print $1}')
     INPUT="-1 ${PATH1}"

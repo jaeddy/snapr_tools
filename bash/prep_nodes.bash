@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This script perform the following tasks on each node: 1) mount SSD; 2) create
-# standard directories used by downstream code; 3) copy and rename reference 
+# standard directories used by downstream code; 3) copy and rename reference
 # files to resources directory.
 
 ######## Specify defaults & examples ##########################################
@@ -47,7 +47,7 @@ while getopts "s:g:x:Lq:N:E:dh" ARG; do
 		* ) usage; exit 1;;
 	esac
 done
-shift $(($OPTIND - 1)) 
+shift $(($OPTIND - 1))
 
 
 ######## Specify human or mouse specific options ##############################
@@ -101,12 +101,14 @@ cat > $SUBMIT_FILE <<EOF
 
 ### Job settings ###################################################
 
-# Mount the SS hard drive
+# Mount the SS hard drive (if not already mounted)
 
-sudo mkfs.ext4 /dev/xvdaa
-sudo mkdir -m 000 /mnt # isnt required if /mnt exists.
-echo "/dev/xvdaa /mnt auto noatime 0 0" | sudo tee -a /etc/fstab
-sudo mount /mnt
+if ( ! df | awk '{print $1}' | grep -q xvdaa ); then
+	sudo mkfs.ext4 /dev/xvdaa
+	sudo mkdir -m 000 /mnt # isnt required if /mnt exists.
+	echo "/dev/xvdaa /mnt auto noatime 0 0" | sudo tee -a /etc/fstab
+	sudo mount /mnt
+fi
 
 # Create standard directories & symlinks
 
@@ -131,8 +133,7 @@ mkdir /resources/transcriptome
 
 # Copy and rename assembly files from S3
 
-if [ $LOCAL == 0 ];
-then
+if [ $LOCAL == 0 ]; then
     aws s3 cp $FASTA_SRC /resources/assemblies/ref-genome.fa ;
 
     aws s3 cp $GTF_SRC /resources/assemblies/ref-transcriptome.gtf ;
@@ -143,11 +144,10 @@ fi
 
 EOF
 
-if [ $DISPONLY == 1 ]; 
-then
+if [ $DISPONLY == 1 ]; then
     echo "#$ QSUBOPTS"
     cat $SUBMIT_FILE
-else    
+else
     echo "Prepping node $NODE"
     echo
     qsub $QSUBOPTS < $SUBMIT_FILE
@@ -156,4 +156,3 @@ fi
 rm $SUBMIT_FILE
 
 done
-

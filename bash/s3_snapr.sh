@@ -16,26 +16,29 @@ GENOME="/resources/genome/"
 TRANSCRIPTOME="/resources/transcriptome/"
 GTF_FILE="/resources/assemblies/ref-transcriptome.gtf"
 
+# Default behavior for script
+KEEP=0 # 0: upload outputs to S3 vs. 1: keep on local machine
 
 ######## Parse inputs #########################################################
 
 function usage {
-	echo "$0: [-m mode (paired/single)] [-r] -1 s3://path_to_file [-2 s3://path_to_paired_file] [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome]"
+	echo "$0: [-m mode (paired/single)] [-r] -1 s3://path_to_file [-2 s3://path_to_paired_file] [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome] [-k]"
 	echo
 }
 
-while getopts "m:r1:2:l:g:t:x:h" ARG; do
+while getopts "m:r1:2:l:g:t:x:kh" ARG; do
 	case "$ARG" in
 	    m ) MODE=$OPTARG;;
 	    r ) REPROCESS=1;;
 	    1 ) PATH1=$OPTARG;;
 	    2 ) PATH2=$OPTARG;;
 	    l ) PAIR_LABEL=$OPTARG;;
-		g ) GENOME=$OPTARG;;
-		t ) TRANSCRIPTOME=$OPTARG;;
-		x ) GTF_FILE=$OPTARG;;
-		h ) usage; exit 0;;
-		* ) usage; exit 1;;
+	    g ) GENOME=$OPTARG;;
+	    t ) TRANSCRIPTOME=$OPTARG;;
+	    x ) GTF_FILE=$OPTARG;;
+	    k ) KEEP=1;;
+	    h ) usage; exit 0;;
+	    * ) usage; exit 1;;
 	esac
 done
 shift $(($OPTIND - 1))
@@ -123,15 +126,18 @@ time $SNAPR_EXEC $SNAPR_OPTIONS
 
 ######## Copy and clean up results ############################################
 
-# Remove original file
-# rm $FILE1 
-# rm $FILE2
 
-# Copy files to S3
-# aws s3 cp \
-#     $TMP_DIR \
-#     $S3_DIR/snapr/ \
-#     --recursive ;
-# 
-# Remove temporary directory
-# rm -rf $TMP_DIR
+if [ ${KEEP} == 0 ]; then
+    # Remove original file(s)
+    rm $FILE1 
+    rm $FILE2
+
+    # Copy files to S3
+    aws s3 cp \
+        $TMP_DIR \
+        $S3_DIR/snapr/ \
+        --recursive ;
+
+    # Remove temporary directory
+    rm -rf $TMP_DIR
+fi

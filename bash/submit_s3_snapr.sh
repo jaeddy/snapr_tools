@@ -13,8 +13,8 @@
 # BUCKET="s3://mayo-prelim-rnaseq"
 # SUBDIR="AD_Samples"
 # BUCKET="s3://ufl-u01-rnaseq"
-BUCKET="s3://rna-editing-exdata"
-SUBDIR="chr8"
+# BUCKET="s3://rna-editing-exdata"
+# SUBDIR="chr8"
 
 # Default options for file format and alignment mode
 MODE=paired
@@ -33,17 +33,18 @@ GENOME="/resources/genome/"
 TRANSCRIPTOME="/resources/transcriptome/"
 GTF_FILE="/resources/assemblies/ref-transcriptome.gtf"
 
-# Default behavior for script (print job settings vs. submit with qsub)
-DISPONLY=0
+# Default behavior for script
+KEEP=0 # 0: upload outputs to S3 vs. 1: keep on local machine
+DISPONLY=0 # 1: print job settings vs. 0: submit with qsub
 
 ######## Parse inputs #########################################################
 
 function usage {
-    echo "$0: -b s3_bucket [-s subdir] [-L file_list] [-m mode (paired/single)] [-f format (bam/fastq)] [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome] [-p num_procs] [-q queue] [-N jobname] [-M mem(3.8G,15.8G)] [-E email_address] [-d]"
+    echo "$0: -b s3_bucket [-s subdir] [-L file_list] [-m mode (paired/single)] [-f format (bam/fastq)] [-l pair_file_label] [-g genome_index] [-t transcriptome_index] [-x ref_transcriptome] [-p num_procs] [-q queue] [-N jobname] [-M mem(3.8G,15.8G)] [-E email_address] [-k] [-d]"
     echo
 }
 
-while getopts "b:s:L:m:f:l:g:t:e:p:q:N:E:dh" ARG; do
+while getopts "b:s:L:m:f:l:g:t:e:p:q:N:E:kdh" ARG; do
     case "$ARG" in
         b ) BUCKET=$OPTARG;;
         s ) SUBDIR=$OPTARG;;
@@ -59,6 +60,7 @@ while getopts "b:s:L:m:f:l:g:t:e:p:q:N:E:dh" ARG; do
         N ) NAME=$OPTARG;;
         M ) MEM=$OPTARG;;
         E ) EMAIL=$OPTARG;;
+	k ) KEEP=1;;
         d ) DISPONLY=1;;
         h ) usage; exit 0;;
         * ) usage; exit 1;;
@@ -110,8 +112,7 @@ EOF
 ######## Assemble & prepare inputs for s3_snapr.bash ##########################
 
 # Search S3 bucket for files, if no input list is provided
-if [ ! -e "$FILE_LIST" ];
-then
+if [ ! -e "$FILE_LIST" ]; then
     # Get full list of all files from S3 bucket for the specified group
     FILE_LIST=`mktemp s3-seq-files.XXXXXXXX`
     aws s3 ls ${BUCKET}/${SUBDIR} --recursive \
@@ -125,8 +126,7 @@ NUM_FILES=`expr $(wc -l ${FILE_LIST} | awk '{print $1}')`
 echo "$NUM_FILES ${FORMAT} files detected..."
 
 # Set reprocess flag if bam format
-if [ $FORMAT = bam ];
-    then
+if [ $FORMAT = bam ]; then
     REPROCESS="-r"
     echo "Files will be reprocessed with SNAPR."
     echo
@@ -134,8 +134,7 @@ fi
 
 # Function to pull out sample IDs from file paths
 function get_handle {
-    while read line
-    do
+    while read line; do
         filename=${line##*/};
         handle=$(echo $filename \
         | awk -v tag="(${PAIR_LABEL})+.*" '{gsub(tag, "")}1')
@@ -154,9 +153,12 @@ echo
 JOB_SCRIPT=bash/s3_snapr.bash
 
 OPTIONS="-m ${MODE} ${REPROCESS}"
-if [ -z ${REPROCESS+x} ] && [ $MODE == paired ];
-then
+if [ -z ${REPROCESS+x} ] && [ $MODE == paired ]; then
     OPTIONS="${OPTIONS} -l ${PAIR_LABEL}"
+fi
+
+if [ ${KEEP} == 1 ]; then
+    OPTIONS="${OPTIONS} -k"
 fi
 
 REF_FILES="-g ${GENOME} -t ${TRANSCRIPTOME} -x ${GTF_FILE}"
@@ -166,11 +168,9 @@ REF_FILES="-g ${GENOME} -t ${TRANSCRIPTOME} -x ${GTF_FILE}"
 
 count=0
 # Pull out all file paths matching unique sample IDs
-get_handle ${FILE_LIST} | uniq | head -n 4 | while read ID
-do
+get_handle ${FILE_LIST} | uniq | head -n 4 | while read ID; do
     count=$(($count+1)) # counter for testing
-    if [ $count -gt 1 ]
-    then
+    if [ $count -gt 1 ]; then
         break
     fi
 
@@ -181,8 +181,7 @@ do
 
     # Define second input file path only if extension format is FASTQ (i.e.,
     # the reprocess flag is undefined) and mode is paired
-    if [ -z ${REPROCESS+x} ] && [ $MODE == paired ];
-    then
+    if [ -z ${REPROCESS+x} ] && [ $MODE == paired ]; then
         PATH2=${BUCKET}/$(echo $FILE_MATCH | awk '{print $2}')
         INPUT="${INPUT} -2 ${PATH2}"
     fi
@@ -199,8 +198,7 @@ EOF
     SUBMIT_FILE=`mktemp qsub-submit.XXXXXXXX`
     cat $QSUB_BASE $JOB_SETTINGS > $SUBMIT_FILE
 
-    if [ $DISPONLY == 1 ];
-    then
+    if [ $DISPONLY == 1 ]; then
         echo "#$ QSUBOPTS"
         cat $SUBMIT_FILE
     else
@@ -215,7 +213,6 @@ EOF
 done
 
 rm $QSUB_BASE
-if [ ! -e "$IN_LIST" ];
-then
+if [ ! -e "$IN_LIST" ]; then
     rm $FILE_LIST
 fi

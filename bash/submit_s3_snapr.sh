@@ -205,8 +205,7 @@ EOF
         echo "Submitting the following job:"
         echo "$JOB_SCRIPT $OPTIONS $INPUT $REF_FILES"
         echo
-        # qsub $QSUBOPTS < $SUBMIT_FILE
-        $JOB_SCRIPT $OPTIONS $INPUT $REF_FILES
+        qsub $QSUBOPTS < $SUBMIT_FILE
     fi
 
     rm $JOB_SETTINGS

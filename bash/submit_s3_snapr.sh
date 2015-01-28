@@ -60,7 +60,7 @@ while getopts "b:s:L:m:f:l:g:t:e:p:q:N:E:kdh" ARG; do
         N ) NAME=$OPTARG;;
         M ) MEM=$OPTARG;;
         E ) EMAIL=$OPTARG;;
-	k ) KEEP=1;;
+        k ) KEEP=1;;
         d ) DISPONLY=1;;
         h ) usage; exit 0;;
         * ) usage; exit 1;;
@@ -168,9 +168,9 @@ REF_FILES="-g ${GENOME} -t ${TRANSCRIPTOME} -x ${GTF_FILE}"
 
 count=0
 # Pull out all file paths matching unique sample IDs
-get_handle ${FILE_LIST} | uniq | head -n 4 | while read ID; do
-    count=$(($count+1)) # counter for testing
-    if [ $count -gt 1 ]; then
+get_handle ${FILE_LIST} | uniq | while read ID; do
+    count=$(($count+1)) # counter for displaying preview (and testing)
+    if [ $count -gt 1 ] && [ $DISPONLY == 1 ]; then
         break
     fi
 

@@ -174,6 +174,7 @@ get_handle ${FILE_LIST} | uniq | while read HANDLE; do
         break
     fi
 
+    echo $HANDLE
     FILE_MATCH=$(grep $HANDLE $FILE_LIST)
 
     PATH1=${BUCKET}/$(echo $FILE_MATCH | awk '{print $1}')

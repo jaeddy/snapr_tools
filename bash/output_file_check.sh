@@ -50,10 +50,10 @@ function get_handle {
 echo "$(get_handle $SOURCE_FILES | uniq | wc -l | awk '{print $1}') unique source files detected..."
 
 # Find any sample IDs in the source data that are not present in outputs
-MISSED_IDS=`mktemp missed-files.XXXXXXXX`
-comm -23 <(get_handle $SOURCE_FILES) <(get_handle $SNAPR_FILES) > $MISSED_IDS
+MISSED=`mktemp missed-files.XXXXXXXX`
+comm -23 <(get_handle $SOURCE_FILES) <(get_handle $SNAPR_FILES) > $MISSED
 
-NUM_MISSED=$(wc -l $MISSED_IDS | awk '{print $1}')
+NUM_MISSED=$(wc -l $MISSED | awk '{print $1}')
 if [ $NUM_MISSED -gt 0 ]; then
     echo "${NUM_MISSED} files missed."
 
@@ -62,7 +62,7 @@ if [ $NUM_MISSED -gt 0 ]; then
 
     echo "Saving list to ${OUT_FILE}..."
     echo $OUT_FILE
-    grep -f $MISSED_IDS $SOURCE_FILES > $OUT_FILE
+    grep -f $MISSED $SOURCE_FILES > $OUT_FILE
 else
     echo "No files missed."
 fi

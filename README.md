@@ -5,6 +5,8 @@ This is a set of simple tools I'm putting together to facilitate running SNAPR o
 3. Run SNAPR on each FASTQ/BAM file  
 4. Upload reprocessed SNAPR BAM files and other outputs to S3
 
+*Note: all scripts under the* `/shell` *directory are deprecated and will be removed soon.*
+
 ## Basic infrastructure
 
 The code is designed to run on an AMI that includes all required binaries for running `snapr` or interacting with Amazon S3. Reference files, by default, can be accessed from the S3 bucket s3://snapr-ref-assemblies; these files can also be provided in the local (EC2) environemnt.
@@ -13,7 +15,7 @@ Steps in the SNAPR pipeline - including node setup, index building, and alignmen
 
 ##### *Cluster details*
 
-> **AMI:** ami-d7530de7  
+> **AMI:** ami-57782067  
 > **Instance type:** r3.4xlarge  
 > **Availability zone:** us-west-2b
 
@@ -162,7 +164,7 @@ user@master:/home/snapr_tools# bash/build_indices.sh
 **3)** Process all paired FASTQ files in the bucket `s3://rna-editing-exdata` under the subdirectory `chr8`.
 
 ```
-user@master:/home/snapr_tools# bash/submit_s3_snapr.sh -b s3://rna-editing-exdata -s subdir -f fastq -m paired -l "_[0-1]"
+user@master:/home/snapr_tools# bash/submit_s3_snapr.sh -b s3://rna-editing-exdata -s chr8 -f fastq -m paired -l "_[1-2]"
 ```
 
 **Note:** You can use the `-d` flag to preview the first job that will be submitted to SGE, along with all inputs that would be provided to `s3_snapr.sh`. The end of the printed output should look like this:

@@ -112,24 +112,29 @@ fi
 
 # Create standard directories & symlinks
 
-mkdir /mnt/resources
-ln -s /mnt/resources /resources
+if [ ! -e "/mnt/resources" ]; then
+    mkdir /mnt/resources
+    ln -s /mnt/resources /resources
 
-mkdir /mnt/data
-ln -s /mnt/data /data
+    # Create resource sub-directories
 
-mkdir /mnt/results
-ln -s /mnt/results /results
+    mkdir /resources/assemblies
+    mkdir /resources/genome
+    mkdir /resources/transcriptome
+fi
+
+if [ ! -e "/mnt/data" ]; then
+    mkdir /mnt/data
+    ln -s /mnt/data /data
+fi
+
+if [ ! -e "/mnt/results/" ]; then
+    mkdir /mnt/results
+    ln -s /mnt/results /results
+fi
 
 # Install AWS CLI (this shouldn't be necessary once added to AMI)
-
-pip install awscli
-
-# Create resource directories
-
-mkdir /resources/assemblies
-mkdir /resources/genome
-mkdir /resources/transcriptome
+# pip install awscli
 
 # Copy and rename assembly files from S3
 

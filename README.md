@@ -5,6 +5,8 @@ This is a set of simple tools I'm putting together to facilitate running SNAPR o
 3. Run SNAPR on each FASTQ/BAM file  
 4. Upload reprocessed SNAPR BAM files and other outputs to S3
 
+*Note: all scripts under the* `/shell` *directory are deprecated and will be removed soon.*
+
 ## Basic infrastructure
 
 The code is designed to run on an AMI that includes all required binaries for running `snapr` or interacting with Amazon S3. Reference files, by default, can be accessed from the S3 bucket s3://snapr-ref-assemblies; these files can also be provided in the local (EC2) environemnt.
@@ -13,7 +15,7 @@ Steps in the SNAPR pipeline - including node setup, index building, and alignmen
 
 ##### *Cluster details*
 
-> **AMI:** ami-d7530de7  
+> **AMI:** ami-57782067  
 > **Instance type:** r3.4xlarge  
 > **Availability zone:** us-west-2b
 

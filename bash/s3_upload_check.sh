@@ -35,8 +35,8 @@ function strip_head {
 
 # Find any local files not present on S3
 MISSED=`mktemp missed-uploads.XXXXXXXX`
-comm -23 <(strip_head $IN_LIST) \
-	<(strip_head $FILE_LIST) > $MISSED
+comm -23 <(strip_head $IN_LIST | sort) \
+	<(strip_head $FILE_LIST | sort) > $MISSED
 
 NUM_MISSED=$(wc -l $MISSED | awk '{print $1}')
 if [ $NUM_MISSED -gt 0 ]; then

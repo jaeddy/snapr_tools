@@ -61,7 +61,6 @@ if [ $NUM_MISSED -gt 0 ]; then
     OUT_FILE=${OUT_FILE##*/};
 
     echo "Saving list to ${OUT_FILE}..."
-    echo $OUT_FILE
     grep -f $MISSED $SOURCE_FILES > $OUT_FILE
 else
     echo "No files missed."
@@ -70,4 +69,4 @@ fi
 rm $FILE_LIST
 rm $SOURCE_FILES
 rm $SNAPR_FILES
-rm $MISSED_IDS
+rm $MISSED

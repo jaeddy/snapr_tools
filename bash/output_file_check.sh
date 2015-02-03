@@ -47,7 +47,8 @@ function get_handle {
     done < $1
 }
 
-echo "$(get_handle $SOURCE_FILES | uniq | wc -l | awk '{print $1}') unique source files detected..."
+NUM_FILES=$(get_handle $SOURCE_FILES | uniq | wc -l | awk '{print $1}')
+echo "$NUM_FILES unique source files detected..."
 
 # Find any sample IDs in the source data that are not present in outputs
 MISSED=`mktemp missed-files.XXXXXXXX`

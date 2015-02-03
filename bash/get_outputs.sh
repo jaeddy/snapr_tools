@@ -29,12 +29,9 @@ echo "$NUM_FILES files detected..."
 count=0
 cat $OUTPUT_FILES | while read FILE; do
     count=$(($count+1)) # counter for tracking progress
-    if [ $count -gt 1 ]; then
-        break
-    fi
 
     echo "Copying file $count of $NUM_FILES..."
-    aws s3 cp --dryrun \
+    aws s3 cp \
         ${BUCKET}/${FILE} \
         ${OUT_DIR}${RESULTS_DIR}/${FILE}
 done

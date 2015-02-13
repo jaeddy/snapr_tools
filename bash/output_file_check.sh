@@ -22,12 +22,12 @@ aws s3 ls ${BUCKET}/${SUBDIR} --recursive \
 
 # Pull out list of source files
 SOURCE_FILES=`mktemp s3-source-files.XXXXXXXX`
-grep -v .snap $FILE_LIST > $SOURCE_FILES
+grep -v .snap $FILE_LIST | grep -v "^$" > $SOURCE_FILES
 echo "$(wc -l $SOURCE_FILES | awk '{print $1}') total source files detected..."
 
 # Pull out list of output SNAPR files
 SNAPR_FILES=`mktemp s3-snapr-files.XXXXXXXX`
-grep .snap $FILE_LIST > $SNAPR_FILES
+grep .snap $FILE_LIST | grep -v "^$" > $SNAPR_FILES
 echo "$(wc -l $SNAPR_FILES | awk '{print $1}') SNAPR-processed files detected..."
 
 
@@ -41,7 +41,7 @@ function get_handle {
     while read line; do
         filename=${line##*/};
         handle=$(echo $filename \
-            | awk -v tag="(${PAIR_LABEL})+.*" '{gsub(tag, "")}1' \
+            | awk -v tag="(${PAIR_LABEL})+" '{gsub(tag, "")}1' \
             | awk -v ext=".(snap|bam|fastq)+.*" '{gsub(ext, "")}1')
         echo $handle;
     done < $1
@@ -52,17 +52,27 @@ echo "$NUM_FILES unique source files detected..."
 
 # Find any sample IDs in the source data that are not present in outputs
 MISSED=`mktemp missed-files.XXXXXXXX`
-comm -23 <(get_handle $SOURCE_FILES) <(get_handle $SNAPR_FILES) > $MISSED
+comm -23 <(get_handle $SOURCE_FILES | uniq | sort) \
+    <(get_handle $SNAPR_FILES | uniq | sort) > $MISSED
 
 NUM_MISSED=$(wc -l $MISSED | awk '{print $1}')
+
 if [ $NUM_MISSED -gt 0 ]; then
     echo "${NUM_MISSED} files missed."
 
     OUT_FILE=${BUCKET}_${SUBDIR}_missed.txt
     OUT_FILE=${OUT_FILE##*/};
 
+    # this step is a little hacky - source files need to be converted to
+    # handles in order to find matches to the list of missing files; I use grep
+    # to get the line number of the match, then awk to print out the full name
+    # of the source file
     echo "Saving list to ${OUT_FILE}..."
-    grep -f $MISSED $SOURCE_FILES > $OUT_FILE
+    grep -n -f $MISSED <(get_handle $SOURCE_FILES) \
+        | awk -v file="\:+.*" '{gsub(file, "")}1' \
+        | while read line; do
+            awk -v num=$line 'NR==num {print $0}' $SOURCE_FILES
+        done > $OUT_FILE
 else
     echo "No files missed."
 fi

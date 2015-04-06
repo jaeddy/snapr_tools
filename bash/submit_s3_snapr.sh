@@ -178,6 +178,9 @@ get_handle ${FILE_LIST} | uniq | while read HANDLE; do
 
     PATH1=${BUCKET}/$(echo $FILE_MATCH | awk '{print $1}')
     INPUT="-d ${BUCKET}/${SUBDIR} -1 ${PATH1}"
+    if [ -z ${SUBDIR+x} ]; then
+        INPUT="-d ${BUCKET} -1 ${PATH1}"
+    fi
 
     # Define second input file path only if extension format is FASTQ (i.e.,
     # the reprocess flag is undefined) and mode is paired

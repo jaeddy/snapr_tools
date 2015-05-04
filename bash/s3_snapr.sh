@@ -116,14 +116,31 @@ time $SNAPR_EXEC $SNAPR_OPTIONS
 
 ######## Copy and clean up results ############################################
 
+MAX_S3_UPLOAD_RETRIES=5
+NUM_TRIES=0
 
 if [ ${KEEP} == 0 ]; then
+    VAR="  "
 
+    while [ -n "$VAR" ] || [ $NUM_TRIES < $MAX_S3_UPLOAD_RETRIES ] 
+    do
     # Copy files to S3
     aws s3 cp \
         $OUT_DIR \
         $S3_DIR/snapr/ \
         --recursive ;
+
+	ls -la $OUT_DIR | awk '{print $5}' | tail -n +4 | sort > /tmp/fs-output
+	aws s3 ls $S3_DIR/snapr/ | awk '{print $3}' | sort > /tmp/s3-output
+	VAR=`diff /tmp/s3-output /tmp/fs-output`
+
+	if [ -n "$VAR" ]; then
+            let NUM_TRIES++
+	    echo "Integrity test for S3 download has FAILED. Retrying."
+	else
+	    echo "Integrity test for S3 download has SUCCEEDED!"
+	fi
+    done
 
     # Remove temporary directories
     rm -rf $TMP_DIR

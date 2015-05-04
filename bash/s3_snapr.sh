@@ -26,6 +26,15 @@ function usage {
 	echo
 }
 
+function checkS3BucketIntegrity {
+    PID=`echo $$`
+    S3_OUT_DIR=$1
+    LOCAL_DIR=$2
+    aws s3 ls $S3_OUT_DIR | awk '{print $3}' | sort > /tmp/s3-output$PID
+    ls -la $LOCAL_DIR | awk '{print $5}' | tail -n +4 | sort > /tmp/fs-output$PID
+    echo `diff /tmp/s3-output$PID /tmp/fs-output$PID`
+}
+
 while getopts "m:rd:1:2:l:g:t:x:kh" ARG; do
 	case "$ARG" in
 	    m ) MODE=$OPTARG;;
@@ -130,10 +139,7 @@ if [ ${KEEP} == 0 ]; then
         $S3_DIR/snapr/ \
         --recursive ;
 
-	ls -la $OUT_DIR | awk '{print $5}' | tail -n +4 | sort > /tmp/fs-output
-	aws s3 ls $S3_DIR/snapr/ | awk '{print $3}' | sort > /tmp/s3-output
-	VAR=`diff /tmp/s3-output /tmp/fs-output`
-
+        VAR=`checkS3BucketIntegrity $S3_DIR/snapr $OUT_DIR`
 	if [ -n "$VAR" ]; then
             let NUM_TRIES++
 	    echo "Integrity test for S3 download has FAILED. Retrying."

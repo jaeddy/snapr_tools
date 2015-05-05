@@ -143,14 +143,14 @@ if [ $LOCAL == 0 ]; then
     while [-n $VAR] || [ NUM_RERTRIES > MAX_RETRIES]
     do
         aws s3 cp $FASTA_SRC /resources/assemblies/ref-genome.fa ;
-        VAR=`s3-data-check.sh $FASTA_SRC /resources/assemblies/ref-genome.fa`
+        VAR=`../s3-data-check.sh $FASTA_SRC /resources/assemblies/ref-genome.fa`
     done
 
     VAR=" "
     while [-n $VAR] || [ NUM_RERTRIES > MAX_RETRIES]
     do
         aws s3 cp $GTF_SRC /resources/assemblies/ref-transcriptome.gtf ;
-        VAR=`s3-data-check.sh $FASTA_SRC /resources/assemblies/ref-genome.fa`
+        VAR=`../s3-data-check.sh $FASTA_SRC /resources/assemblies/ref-genome.fa`
     done
 else
     cp $FASTA_FILE /resources/assemblies/ref-genome.fa ;

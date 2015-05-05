@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# This script checks if the files in S3 and a given folder are the same and have the exact same size 
+# down to the bytes 
+
 PID=`echo $$`
 S3_OUT_DIR=$1
 LOCAL_DIR=$2

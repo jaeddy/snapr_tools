@@ -33,6 +33,16 @@ function usage {
 	echo
 }
 
+
+function checkS3BucketIntegrity {
+    PID=`echo $$`
+    S3_OUT_DIR=$1
+    LOCAL_DIR=$2
+    aws s3 ls $S3_OUT_DIR | awk '{print $3}' | sort > /tmp/s3-output$PID
+    ls -la $LOCAL_DIR | awk '{print $5}' | tail -n +4 | sort > /tmp/fs-output$PID
+    echo `diff /tmp/s3-output$PID /tmp/fs-output$PID`
+}
+
 while getopts "s:g:x:Lq:N:E:dh" ARG; do
 	case "$ARG" in
 	    s ) SPECIES=$OPTARG;;
@@ -143,14 +153,14 @@ if [ $LOCAL == 0 ]; then
     while [-n $VAR] || [ NUM_RERTRIES > MAX_RETRIES]
     do
         aws s3 cp $FASTA_SRC /resources/assemblies/ref-genome.fa ;
-        VAR=`../s3-data-check.sh $FASTA_SRC /resources/assemblies/ref-genome.fa`
+        VAR=`checkS3BucketIntegrity $FASTA_SRC /resources/assemblies/ref-genome.fa`
     done
 
     VAR=" "
     while [-n $VAR] || [ NUM_RERTRIES > MAX_RETRIES]
     do
         aws s3 cp $GTF_SRC /resources/assemblies/ref-transcriptome.gtf ;
-        VAR=`../s3-data-check.sh $FASTA_SRC /resources/assemblies/ref-genome.fa`
+        VAR=`checkS3BucketIntegrity $FASTA_SRC /resources/assemblies/ref-genome.fa`
     done
 else
     cp $FASTA_FILE /resources/assemblies/ref-genome.fa ;

@@ -25,8 +25,6 @@ EMAIL="bob@bob.com"
 # Default behavior for script (print job settings vs. submit with qsub)
 DISPONLY=0
 
-PID=$$
-
 ######## Parse inputs #########################################################
 
 function usage {
@@ -142,38 +140,8 @@ fi
 # Copy and rename assembly files from S3
 
 if [ $LOCAL == 0 ]; then
-    NUM_RERTRIES=0
-    MAX_RETRIES=5
-    touch /tmp/s3-local-file-diff$PID
-    echo "blahblah" > /tmp/s3-local-file-diff$PID
-    while [ -s /tmp/s3-local-file-diff$PID ] || [ NUM_RERTRIES > MAX_RETRIES]
-    do
-        aws s3 cp $FASTA_SRC /resources/assemblies/ref-genome.fa ;
-        aws s3 ls $FASTA_SRC | cut -d " " -f 3  | sort > /tmp/s3-output$PID
-        ls -la /resources/assemblies/ref-genome.fa | cut -d " " -f 5 | sort > /tmp/fs-output$PID
-        diff /tmp/s3-output$PID /tmp/fs-output$PID  > /tmp/s3-local-file-diff
-
-        if [ -s /tmp/s3-local-file-diff ]; then
-            echo "All files weren't downloaded from S3. Retrying"
-        fi
-        let NUM_RERTRIES++
-    done
-
-    NUM_RERTRIES=0
-    touch /tmp/s3-local-file-diff$PID
-    echo "blahblah" > /tmp/s3-local-file-diff$PID
-    while [ -s /tmp/s3-local-file-diff$PID ] || [ NUM_RERTRIES > MAX_RETRIES]
-    do
-        aws s3 cp $GTF_SRC /resources/assemblies/ref-transcriptome.gtf ;
-        aws s3 ls $GTF_SRC | cut -d " " -f 3  | sort > /tmp/s3-output$PID
-        ls -la /resources/assemblies/ref-transcriptome.gtf | cut -d " " -f 5 | sort > /tmp/fs-output$PID
-        diff /tmp/s3-output$PID /tmp/fs-output$PID  > /tmp/s3-local-file-diff
-
-        if [ -s /tmp/s3-local-file-diff ]; then
-            echo "All files weren't downloaded from S3. Retrying"
-        fi
-        let NUM_RERTRIES++
-    done
+    git clone https://github.com/jaeddy/snapr_tools.git /tmp/snapr_tools
+    /tmp/snapr_tools/bash/download_assemblies.sh $FASTA_SRC $GTF_SRC
 else
     cp $FASTA_FILE /resources/assemblies/ref-genome.fa ;
     cp $GTF_FILE /resources/assemblies/ref-transcriptome.gtf ;

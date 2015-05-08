@@ -142,11 +142,16 @@ if [ ${KEEP} == 0 ]; then
         VAR=`checkS3BucketIntegrity $S3_DIR/snapr $OUT_DIR`
 	if [ -n "$VAR" ]; then
             let NUM_TRIES++
-	    echo "Integrity test for S3 download has FAILED. Retrying."
+	    echo "S3 upload for $OUT_DIR has FAILED on trial $NUM_TRIES. Retrying."
 	else
-	    echo "Integrity test for S3 download has SUCCEEDED!"
+	    echo "S3 upload for $OUT_DIR has SUCCEEDED! on trial $NUM_TRIES"
 	fi
     done
+
+    if [ -n "$VAR" ]; then
+        echo "S3 upload for $OUT_DIR has FAILED after $NUM_TRIES attempts. Giving up."
+        exit 1
+    fi
 
     # Remove temporary directories
     rm -rf $TMP_DIR

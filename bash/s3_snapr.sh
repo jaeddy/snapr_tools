@@ -129,18 +129,18 @@ MAX_S3_UPLOAD_RETRIES=5
 NUM_TRIES=0
 
 if [ ${KEEP} == 0 ]; then
-    VAR="  "
+    DIFF="  "
 
-    while [ -n "$VAR" ] || [ $NUM_TRIES < $MAX_S3_UPLOAD_RETRIES ] 
+    while [ -n "$DIFF" ] && [ $NUM_TRIES -lt $MAX_S3_UPLOAD_RETRIES ] 
     do
-    # Copy files to S3
+    # Copy snapr output files to S3
     aws s3 cp \
         $OUT_DIR \
         $S3_DIR/snapr/ \
         --recursive ;
 
-        VAR=`checkS3BucketIntegrity $S3_DIR/snapr $OUT_DIR`
-	if [ -n "$VAR" ]; then
+        DIFF=`checkS3BucketIntegrity $S3_DIR/snapr $OUT_DIR`
+	if [ -n "$DIFF" ]; then
             let NUM_TRIES++
 	    echo "S3 upload for $OUT_DIR has FAILED on trial $NUM_TRIES. Retrying."
 	else
@@ -148,7 +148,7 @@ if [ ${KEEP} == 0 ]; then
 	fi
     done
 
-    if [ -n "$VAR" ]; then
+    if [ -n "$DIFF" ]; then
         echo "S3 upload for $OUT_DIR has FAILED after $NUM_TRIES attempts. Giving up."
         exit 1
     fi
